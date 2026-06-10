@@ -1,5 +1,16 @@
+const express = require('express');
 const { WebcastPushConnection } = require('tiktok-live-connector');
 const { Client, GatewayIntentBits } = require('discord.js');
+
+const app = express();
+
+app.get('/', (req, res) => {
+  res.send('Bot TikTok Live berjalan!');
+});
+
+app.listen(process.env.PORT || 3000, () => {
+  console.log('Server hidup');
+});
 
 const TIKTOK_USERNAME = process.env.TIKTOK_USERNAME;
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
