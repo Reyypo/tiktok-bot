@@ -69,20 +69,20 @@ async function setupRolePanel(client) {
     .setStyle(ButtonStyle.Danger);
 
   await channel.send({
-    embeds: [genderEmbed],
-    components: [
-      new ActionRowBuilder().addComponents(genderMenu),
-      new ActionRowBuilder().addComponents(resetGenderButton)
-    ]
-  });
+  embeds: [genderEmbed],
+  components: [
+    new ActionRowBuilder().addComponents(resetGenderButton),
+    new ActionRowBuilder().addComponents(genderMenu)
+  ]
+});
 
   await channel.send({
-    embeds: [gameEmbed],
-    components: [
-      new ActionRowBuilder().addComponents(gameMenu),
-      new ActionRowBuilder().addComponents(saveGameButton, resetGameButton)
-    ]
-  });
+  embeds: [gameEmbed],
+  components: [
+    new ActionRowBuilder().addComponents(saveGameButton, resetGameButton),
+    new ActionRowBuilder().addComponents(gameMenu)
+  ]
+});
 
   console.log('Role panel terkirim');
 }
