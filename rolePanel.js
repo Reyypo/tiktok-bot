@@ -72,7 +72,7 @@ async function setupRolePanel(client) {
   .setTitle('REST AREA')
   .setDescription('**Pilih game yang kamu mainkan, lalu klik ✅ Simpan Pilihan.**')
   .setColor(0x3498db)
-  .setImage('https://cdn.discordapp.com/attachments/1514363278615380281/1514391863275163649/standard_4.gif?ex=6a2b32d4&is=6a29e154&hm=070113a22a17a3b6d5d1fbe2ed4966c559f077b79ea0d6ae91fee8098079370c&');
+  .setImage('https://cdn.discordapp.com/attachments/1514363278615380281/1514394569469333566/standard_5.gif?ex=6a2b3559&is=6a29e3d9&hm=e5c250eb89f08ce8498a748732e24737a451a2f96f4a3bed7a8f8aede5163c99&');
 
   const gameMenu = new StringSelectMenuBuilder()
     .setCustomId('select_games')
