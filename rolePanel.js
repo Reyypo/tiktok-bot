@@ -32,6 +32,21 @@ const gameRoles = [
 async function setupRolePanel(client) {
   const channel = await client.channels.fetch(ROLE_PANEL_CHANNEL_ID);
 
+  const oldMessages = await channel.messages.fetch({ limit: 50 });
+  const alreadyExists = oldMessages.some(msg =>
+    msg.author.id === client.user.id &&
+    msg.embeds.length > 0 &&
+    (
+      msg.embeds[0].title === 'Pilih Gender Kamu!' ||
+      msg.embeds[0].title === 'Pilih Role Game Kamu!'
+    )
+  );
+
+  if (alreadyExists) {
+    console.log('Role panel sudah ada, tidak kirim ulang');
+    return;
+  }
+
   const genderEmbed = new EmbedBuilder()
     .setTitle('Pilih Gender Kamu!')
     .setDescription('Pilih gender kamu, lalu klik **✅ Simpan Gender**.')
