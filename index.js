@@ -28,7 +28,7 @@ client.once('clientReady', async () => {
   client.user.setPresence({
     status: 'online',
     activities: [{
-      name: 'TikTok Live Monitor',
+      name: 'Wellcome',
       type: 3
     }]
   });
