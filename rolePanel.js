@@ -8,6 +8,8 @@ const {
 
 const ROLE_PANEL_CHANNEL_ID = process.env.ROLE_PANEL_CHANNEL_ID;
 
+const pendingGameChoices = new Map();
+
 const genderRoles = [
   { label: 'Male', value: '1116103483632922805' },
   { label: 'Female', value: '1128513360674173018' }
@@ -46,7 +48,7 @@ async function setupRolePanel(client) {
 
   const gameEmbed = new EmbedBuilder()
     .setTitle('Pilih Role Game Kamu!')
-    .setDescription('Klik menu di bawah ini untuk memilih game yang kamu mainkan. Bisa pilih lebih dari satu.')
+    .setDescription('Pilih game yang kamu mainkan, lalu klik **✅ Simpan Pilihan**.')
     .setColor(0x3498db);
 
   const gameMenu = new StringSelectMenuBuilder()
@@ -55,6 +57,11 @@ async function setupRolePanel(client) {
     .setMinValues(0)
     .setMaxValues(gameRoles.length)
     .addOptions(gameRoles);
+
+  const saveGameButton = new ButtonBuilder()
+    .setCustomId('save_games')
+    .setLabel('Simpan Pilihan')
+    .setStyle(ButtonStyle.Success);
 
   const resetGameButton = new ButtonBuilder()
     .setCustomId('reset_games')
@@ -73,7 +80,7 @@ async function setupRolePanel(client) {
     embeds: [gameEmbed],
     components: [
       new ActionRowBuilder().addComponents(gameMenu),
-      new ActionRowBuilder().addComponents(resetGameButton)
+      new ActionRowBuilder().addComponents(saveGameButton, resetGameButton)
     ]
   });
 
@@ -96,14 +103,27 @@ async function handleRoleInteraction(interaction) {
   }
 
   if (interaction.customId === 'select_games') {
-    await member.roles.remove(gameRoles.map(role => role.value)).catch(() => {});
-
-    if (interaction.values.length > 0) {
-      await member.roles.add(interaction.values);
-    }
+    pendingGameChoices.set(interaction.user.id, interaction.values);
 
     return interaction.reply({
-      content: '✅ Role game kamu berhasil diperbarui.',
+      content: '✅ Pilihan game kamu sudah dipilih. Klik **Simpan Pilihan** untuk memasang role.',
+      ephemeral: true
+    });
+  }
+
+  if (interaction.customId === 'save_games') {
+    const selectedGames = pendingGameChoices.get(interaction.user.id) || [];
+
+    await member.roles.remove(gameRoles.map(role => role.value)).catch(() => {});
+
+    if (selectedGames.length > 0) {
+      await member.roles.add(selectedGames);
+    }
+
+    pendingGameChoices.delete(interaction.user.id);
+
+    return interaction.reply({
+      content: '✅ Role game kamu berhasil disimpan.',
       ephemeral: true
     });
   }
@@ -118,32 +138,38 @@ async function handleRoleInteraction(interaction) {
   }
 
   if (interaction.customId === 'reset_games') {
-  await member.roles.remove(gameRoles.map(role => role.value)).catch(() => {});
+    await member.roles.remove(gameRoles.map(role => role.value)).catch(() => {});
+    pendingGameChoices.delete(interaction.user.id);
 
-  const newGameMenu = new StringSelectMenuBuilder()
-    .setCustomId('select_games')
-    .setPlaceholder('Pilih Role Game Kamu')
-    .setMinValues(0)
-    .setMaxValues(gameRoles.length)
-    .addOptions(gameRoles);
+    const newGameMenu = new StringSelectMenuBuilder()
+      .setCustomId('select_games')
+      .setPlaceholder('Pilih Role Game Kamu')
+      .setMinValues(0)
+      .setMaxValues(gameRoles.length)
+      .addOptions(gameRoles);
 
-  const resetGameButton = new ButtonBuilder()
-    .setCustomId('reset_games')
-    .setLabel('Reset Role Game Saya')
-    .setStyle(ButtonStyle.Danger);
+    const saveGameButton = new ButtonBuilder()
+      .setCustomId('save_games')
+      .setLabel('Simpan Pilihan')
+      .setStyle(ButtonStyle.Success);
 
-  await interaction.message.edit({
-    components: [
-      new ActionRowBuilder().addComponents(newGameMenu),
-      new ActionRowBuilder().addComponents(resetGameButton)
-    ]
-  });
+    const resetGameButton = new ButtonBuilder()
+      .setCustomId('reset_games')
+      .setLabel('Reset Role Game Saya')
+      .setStyle(ButtonStyle.Danger);
 
-  return interaction.reply({
-    content: '✅ Semua role game kamu berhasil direset.',
-    ephemeral: true
-  });
- }
+    await interaction.message.edit({
+      components: [
+        new ActionRowBuilder().addComponents(newGameMenu),
+        new ActionRowBuilder().addComponents(saveGameButton, resetGameButton)
+      ]
+    });
+
+    return interaction.reply({
+      content: '✅ Semua role game kamu berhasil direset.',
+      ephemeral: true
+    });
+  }
 }
 
 module.exports = {
