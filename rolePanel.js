@@ -7,8 +7,6 @@ const {
 } = require('discord.js');
 
 const ROLE_PANEL_CHANNEL_ID = process.env.ROLE_PANEL_CHANNEL_ID;
-const ROLE_PANEL_VERSION = 'v2';
-const PANEL_MARKER = `\u200B${ROLE_PANEL_VERSION}`;
 
 const pendingGenderChoices = new Map();
 const pendingGameChoices = new Map();
@@ -38,15 +36,16 @@ async function setupRolePanel(client) {
   const botPanelMessages = oldMessages.filter(msg =>
     msg.author.id === client.user.id &&
     msg.embeds.length > 0 &&
-    msg.embeds[0].description?.includes('v')
+    (
+      msg.embeds[0].title === 'Pilih Gender Kamu!' ||
+      msg.embeds[0].title === 'Pilih Role Game Kamu!'
+    )
   );
 
-  const currentPanelExists = botPanelMessages.some(msg =>
-    msg.embeds[0].description?.includes(ROLE_PANEL_VERSION)
-  );
+  const panelSudahAda = botPanelMessages.size >= 2;
 
-  if (currentPanelExists) {
-    console.log('Role panel versi terbaru sudah ada, tidak kirim ulang');
+  if (panelSudahAda) {
+    console.log('Role panel sudah ada, tidak kirim ulang');
     return;
   }
 
@@ -56,7 +55,7 @@ async function setupRolePanel(client) {
 
   const genderEmbed = new EmbedBuilder()
     .setTitle('Pilih Gender Kamu!')
-    .setDescription('Pilih gender kamu, lalu klik **✅ Simpan Gender**.' + PANEL_MARKER)
+    .setDescription('Pilih gender kamu, lalu klik **✅ Simpan Gender**.')
     .setColor(0x3498db);
 
   const genderMenu = new StringSelectMenuBuilder()
@@ -76,7 +75,7 @@ async function setupRolePanel(client) {
 
   const gameEmbed = new EmbedBuilder()
     .setTitle('Pilih Role Game Kamu!')
-    .setDescription('Pilih game yang kamu mainkan, lalu klik **✅ Simpan Pilihan**.' + PANEL_MARKER)
+    .setDescription('Pilih game yang kamu mainkan, lalu klik **✅ Simpan Pilihan**.')
     .setColor(0x3498db);
 
   const gameMenu = new StringSelectMenuBuilder()
@@ -137,7 +136,6 @@ async function handleRoleInteraction(interaction) {
 
     await member.roles.remove(genderRoles.map(role => role.value)).catch(() => {});
     await member.roles.add(selectedGender);
-
     pendingGenderChoices.delete(interaction.user.id);
 
     return interaction.reply({
