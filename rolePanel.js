@@ -48,9 +48,10 @@ async function setupRolePanel(client) {
   }
 
   const genderEmbed = new EmbedBuilder()
-    .setTitle('Pilih Gender Kamu!')
-    .setDescription('Pilih gender kamu, lalu klik **✅ Simpan Gender**.')
-    .setColor(0x3498db);
+  .setTitle('REST AREA')
+  .setDescription('**Pilih gender kamu, lalu klik ✅ Simpan Gender.**')
+  .setColor(0x3498db)
+  .setImage('https://cdn.discordapp.com/attachments/1514363278615380281/1514383535916716232/standard_2.gif?ex=6a2b2b12&is=6a29d992&hm=93661b6757ab76125c8f34d5e80b1d6c5168e4c8f8eafaf2994e9131e853ca79&');
 
   const genderMenu = new StringSelectMenuBuilder()
     .setCustomId('select_gender')
@@ -68,9 +69,10 @@ async function setupRolePanel(client) {
     .setStyle(ButtonStyle.Danger);
 
   const gameEmbed = new EmbedBuilder()
-    .setTitle('Pilih Role Game Kamu!')
-    .setDescription('Pilih game yang kamu mainkan, lalu klik **✅ Simpan Pilihan**.')
-    .setColor(0x3498db);
+  .setTitle('REST AREA')
+  .setDescription('**Pilih game yang kamu mainkan, lalu klik ✅ Simpan Pilihan.**')
+  .setColor(0x3498db)
+  .setImage('https://cdn.discordapp.com/attachments/1514363278615380281/1514391863275163649/standard_4.gif?ex=6a2b32d4&is=6a29e154&hm=070113a22a17a3b6d5d1fbe2ed4966c559f077b79ea0d6ae91fee8098079370c&');
 
   const gameMenu = new StringSelectMenuBuilder()
     .setCustomId('select_games')
