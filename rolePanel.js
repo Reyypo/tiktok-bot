@@ -7,7 +7,8 @@ const {
 } = require('discord.js');
 
 const ROLE_PANEL_CHANNEL_ID = process.env.ROLE_PANEL_CHANNEL_ID;
-const ROLE_PANEL_VERSION = 'v1';
+const ROLE_PANEL_VERSION = 'v2';
+const PANEL_MARKER = `\u200B${ROLE_PANEL_VERSION}`;
 
 const pendingGenderChoices = new Map();
 const pendingGameChoices = new Map();
@@ -32,17 +33,16 @@ const gameRoles = [
 
 async function setupRolePanel(client) {
   const channel = await client.channels.fetch(ROLE_PANEL_CHANNEL_ID);
-
   const oldMessages = await channel.messages.fetch({ limit: 50 });
 
   const botPanelMessages = oldMessages.filter(msg =>
     msg.author.id === client.user.id &&
     msg.embeds.length > 0 &&
-    msg.embeds[0].footer?.text?.includes('REST AREA Role Panel')
+    msg.embeds[0].description?.includes('v')
   );
 
   const currentPanelExists = botPanelMessages.some(msg =>
-    msg.embeds[0].footer?.text?.includes(ROLE_PANEL_VERSION)
+    msg.embeds[0].description?.includes(ROLE_PANEL_VERSION)
   );
 
   if (currentPanelExists) {
@@ -55,8 +55,9 @@ async function setupRolePanel(client) {
   }
 
   const genderEmbed = new EmbedBuilder()
-    .setColor(0x3498db)
-    .setFooter({ text: `REST AREA Role Panel • ${ROLE_PANEL_VERSION}` });
+    .setTitle('Pilih Gender Kamu!')
+    .setDescription('Pilih gender kamu, lalu klik **✅ Simpan Gender**.' + PANEL_MARKER)
+    .setColor(0x3498db);
 
   const genderMenu = new StringSelectMenuBuilder()
     .setCustomId('select_gender')
@@ -74,8 +75,9 @@ async function setupRolePanel(client) {
     .setStyle(ButtonStyle.Danger);
 
   const gameEmbed = new EmbedBuilder()
-    .setColor(0x3498db)
-    .setFooter({ text: `REST AREA Role Panel • ${ROLE_PANEL_VERSION}` });
+    .setTitle('Pilih Role Game Kamu!')
+    .setDescription('Pilih game yang kamu mainkan, lalu klik **✅ Simpan Pilihan**.' + PANEL_MARKER)
+    .setColor(0x3498db);
 
   const gameMenu = new StringSelectMenuBuilder()
     .setCustomId('select_games')
@@ -177,28 +179,6 @@ async function handleRoleInteraction(interaction) {
     await member.roles.remove(genderRoles.map(role => role.value)).catch(() => {});
     pendingGenderChoices.delete(interaction.user.id);
 
-    const newGenderMenu = new StringSelectMenuBuilder()
-      .setCustomId('select_gender')
-      .setPlaceholder('Pilih Gender Kamu')
-      .addOptions(genderRoles);
-
-    const saveGenderButton = new ButtonBuilder()
-      .setCustomId('save_gender')
-      .setLabel('Simpan Gender')
-      .setStyle(ButtonStyle.Success);
-
-    const resetGenderButton = new ButtonBuilder()
-      .setCustomId('reset_gender')
-      .setLabel('Reset Gender Saya')
-      .setStyle(ButtonStyle.Danger);
-
-    await interaction.message.edit({
-      components: [
-        new ActionRowBuilder().addComponents(saveGenderButton, resetGenderButton),
-        new ActionRowBuilder().addComponents(newGenderMenu)
-      ]
-    });
-
     return interaction.reply({
       content: '✅ Gender kamu berhasil direset.',
       ephemeral: true
@@ -208,30 +188,6 @@ async function handleRoleInteraction(interaction) {
   if (interaction.customId === 'reset_games') {
     await member.roles.remove(gameRoles.map(role => role.value)).catch(() => {});
     pendingGameChoices.delete(interaction.user.id);
-
-    const newGameMenu = new StringSelectMenuBuilder()
-      .setCustomId('select_games')
-      .setPlaceholder('Pilih Role Game Kamu')
-      .setMinValues(0)
-      .setMaxValues(gameRoles.length)
-      .addOptions(gameRoles);
-
-    const saveGameButton = new ButtonBuilder()
-      .setCustomId('save_games')
-      .setLabel('Simpan Pilihan')
-      .setStyle(ButtonStyle.Success);
-
-    const resetGameButton = new ButtonBuilder()
-      .setCustomId('reset_games')
-      .setLabel('Reset Role Game Saya')
-      .setStyle(ButtonStyle.Danger);
-
-    await interaction.message.edit({
-      components: [
-        new ActionRowBuilder().addComponents(saveGameButton, resetGameButton),
-        new ActionRowBuilder().addComponents(newGameMenu)
-      ]
-    });
 
     return interaction.reply({
       content: '✅ Semua role game kamu berhasil direset.',
