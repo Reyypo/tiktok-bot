@@ -118,13 +118,32 @@ async function handleRoleInteraction(interaction) {
   }
 
   if (interaction.customId === 'reset_games') {
-    await member.roles.remove(gameRoles.map(role => role.value)).catch(() => {});
+  await member.roles.remove(gameRoles.map(role => role.value)).catch(() => {});
 
-    return interaction.reply({
-      content: '✅ Semua role game kamu berhasil direset.',
-      ephemeral: true
-    });
-  }
+  const newGameMenu = new StringSelectMenuBuilder()
+    .setCustomId('select_games')
+    .setPlaceholder('Pilih Role Game Kamu')
+    .setMinValues(0)
+    .setMaxValues(gameRoles.length)
+    .addOptions(gameRoles);
+
+  const resetGameButton = new ButtonBuilder()
+    .setCustomId('reset_games')
+    .setLabel('Reset Role Game Saya')
+    .setStyle(ButtonStyle.Danger);
+
+  await interaction.message.edit({
+    components: [
+      new ActionRowBuilder().addComponents(newGameMenu),
+      new ActionRowBuilder().addComponents(resetGameButton)
+    ]
+  });
+
+  return interaction.reply({
+    content: '✅ Semua role game kamu berhasil direset.',
+    ephemeral: true
+  });
+ }
 }
 
 module.exports = {
