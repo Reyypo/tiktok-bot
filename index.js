@@ -22,8 +22,17 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds]
 });
 
-client.once('clientReady', () => {
+client.once('clientReady', async () => {
   console.log(`Discord bot online: ${client.user.tag}`);
+
+  client.user.setPresence({
+    status: 'online',
+    activities: [{
+      name: 'TikTok Live Monitor',
+      type: 3
+    }]
+  });
+
   cekLive();
   setInterval(cekLive, 60 * 1000);
 });
