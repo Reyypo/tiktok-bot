@@ -31,9 +31,9 @@ const gameRoles = [
 
 async function setupRolePanel(client) {
   const channel = await client.channels.fetch(ROLE_PANEL_CHANNEL_ID);
-  const oldMessages = await channel.messages.fetch({ limit: 50 });
 
-  const botPanelMessages = oldMessages.filter(msg =>
+  const oldMessages = await channel.messages.fetch({ limit: 50 });
+  const alreadyExists = oldMessages.some(msg =>
     msg.author.id === client.user.id &&
     msg.embeds.length > 0 &&
     (
@@ -42,15 +42,9 @@ async function setupRolePanel(client) {
     )
   );
 
-  const panelSudahAda = botPanelMessages.size >= 2;
-
-  if (panelSudahAda) {
+  if (alreadyExists) {
     console.log('Role panel sudah ada, tidak kirim ulang');
     return;
-  }
-
-  for (const msg of botPanelMessages.values()) {
-    await msg.delete().catch(() => {});
   }
 
   const genderEmbed = new EmbedBuilder()
@@ -136,6 +130,7 @@ async function handleRoleInteraction(interaction) {
 
     await member.roles.remove(genderRoles.map(role => role.value)).catch(() => {});
     await member.roles.add(selectedGender);
+
     pendingGenderChoices.delete(interaction.user.id);
 
     return interaction.reply({
@@ -177,6 +172,28 @@ async function handleRoleInteraction(interaction) {
     await member.roles.remove(genderRoles.map(role => role.value)).catch(() => {});
     pendingGenderChoices.delete(interaction.user.id);
 
+    const newGenderMenu = new StringSelectMenuBuilder()
+      .setCustomId('select_gender')
+      .setPlaceholder('Pilih Gender Kamu')
+      .addOptions(genderRoles);
+
+    const saveGenderButton = new ButtonBuilder()
+      .setCustomId('save_gender')
+      .setLabel('Simpan Gender')
+      .setStyle(ButtonStyle.Success);
+
+    const resetGenderButton = new ButtonBuilder()
+      .setCustomId('reset_gender')
+      .setLabel('Reset Gender Saya')
+      .setStyle(ButtonStyle.Danger);
+
+    await interaction.message.edit({
+      components: [
+        new ActionRowBuilder().addComponents(saveGenderButton, resetGenderButton),
+        new ActionRowBuilder().addComponents(newGenderMenu)
+      ]
+    });
+
     return interaction.reply({
       content: '✅ Gender kamu berhasil direset.',
       ephemeral: true
@@ -186,6 +203,30 @@ async function handleRoleInteraction(interaction) {
   if (interaction.customId === 'reset_games') {
     await member.roles.remove(gameRoles.map(role => role.value)).catch(() => {});
     pendingGameChoices.delete(interaction.user.id);
+
+    const newGameMenu = new StringSelectMenuBuilder()
+      .setCustomId('select_games')
+      .setPlaceholder('Pilih Role Game Kamu')
+      .setMinValues(0)
+      .setMaxValues(gameRoles.length)
+      .addOptions(gameRoles);
+
+    const saveGameButton = new ButtonBuilder()
+      .setCustomId('save_games')
+      .setLabel('Simpan Pilihan')
+      .setStyle(ButtonStyle.Success);
+
+    const resetGameButton = new ButtonBuilder()
+      .setCustomId('reset_games')
+      .setLabel('Reset Role Game Saya')
+      .setStyle(ButtonStyle.Danger);
+
+    await interaction.message.edit({
+      components: [
+        new ActionRowBuilder().addComponents(saveGameButton, resetGameButton),
+        new ActionRowBuilder().addComponents(newGameMenu)
+      ]
+    });
 
     return interaction.reply({
       content: '✅ Semua role game kamu berhasil direset.',
