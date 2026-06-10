@@ -7,6 +7,7 @@ const {
 } = require('discord.js');
 
 const ROLE_PANEL_CHANNEL_ID = process.env.ROLE_PANEL_CHANNEL_ID;
+const ROLE_PANEL_VERSION = 'v1';
 
 const pendingGenderChoices = new Map();
 const pendingGameChoices = new Map();
@@ -33,24 +34,29 @@ async function setupRolePanel(client) {
   const channel = await client.channels.fetch(ROLE_PANEL_CHANNEL_ID);
 
   const oldMessages = await channel.messages.fetch({ limit: 50 });
-  const alreadyExists = oldMessages.some(msg =>
+
+  const botPanelMessages = oldMessages.filter(msg =>
     msg.author.id === client.user.id &&
     msg.embeds.length > 0 &&
-    (
-      msg.embeds[0].title === 'Pilih Gender Kamu!' ||
-      msg.embeds[0].title === 'Pilih Role Game Kamu!'
-    )
+    msg.embeds[0].footer?.text?.includes('REST AREA Role Panel')
   );
 
-  if (alreadyExists) {
-    console.log('Role panel sudah ada, tidak kirim ulang');
+  const currentPanelExists = botPanelMessages.some(msg =>
+    msg.embeds[0].footer?.text?.includes(ROLE_PANEL_VERSION)
+  );
+
+  if (currentPanelExists) {
+    console.log('Role panel versi terbaru sudah ada, tidak kirim ulang');
     return;
   }
 
+  for (const msg of botPanelMessages.values()) {
+    await msg.delete().catch(() => {});
+  }
+
   const genderEmbed = new EmbedBuilder()
-    .setTitle('Pilih Gender Kamu!')
-    .setDescription('Pilih gender kamu, lalu klik **✅ Simpan Gender**.')
-    .setColor(0x3498db);
+    .setColor(0x3498db)
+    .setFooter({ text: `REST AREA Role Panel • ${ROLE_PANEL_VERSION}` });
 
   const genderMenu = new StringSelectMenuBuilder()
     .setCustomId('select_gender')
@@ -68,9 +74,8 @@ async function setupRolePanel(client) {
     .setStyle(ButtonStyle.Danger);
 
   const gameEmbed = new EmbedBuilder()
-    .setTitle('Pilih Role Game Kamu!')
-    .setDescription('Pilih game yang kamu mainkan, lalu klik **✅ Simpan Pilihan**.')
-    .setColor(0x3498db);
+    .setColor(0x3498db)
+    .setFooter({ text: `REST AREA Role Panel • ${ROLE_PANEL_VERSION}` });
 
   const gameMenu = new StringSelectMenuBuilder()
     .setCustomId('select_games')
