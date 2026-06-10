@@ -1,6 +1,6 @@
 const express = require('express');
 const { WebcastPushConnection } = require('tiktok-live-connector');
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 
 const app = express();
 
@@ -24,7 +24,6 @@ const client = new Client({
 
 client.once('clientReady', () => {
   console.log(`Discord bot online: ${client.user.tag}`);
-
   cekLive();
   setInterval(cekLive, 60 * 1000);
 });
@@ -40,9 +39,19 @@ async function cekLive() {
     if (!sudahNotif) {
       const channel = await client.channels.fetch(CHANNEL_ID);
 
-      await channel.send(
-        `🔴 @${TIKTOK_USERNAME} sedang LIVE di TikTok!\nhttps://www.tiktok.com/@${TIKTOK_USERNAME}/live`
-      );
+      const liveUrl = `https://www.tiktok.com/@${TIKTOK_USERNAME}/live`;
+
+      const embed = new EmbedBuilder()
+        .setTitle(`🔴 @${TIKTOK_USERNAME} sedang LIVE di TikTok!`)
+        .setDescription(`Klik link di bawah untuk langsung nonton live.\n\n${liveUrl}`)
+        .setURL(liveUrl)
+        .setTimestamp();
+
+      await channel.send({
+        content: `@everyone 🔴 **@${TIKTOK_USERNAME} sedang LIVE!**`,
+        embeds: [embed],
+        allowedMentions: { parse: ['everyone'] }
+      });
 
       sudahNotif = true;
     }
