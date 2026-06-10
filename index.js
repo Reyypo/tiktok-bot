@@ -1,4 +1,5 @@
 const express = require('express');
+const { setupRolePanel, handleRoleInteraction } = require('./rolePanel');
 const { WebcastPushConnection } = require('tiktok-live-connector');
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 
@@ -32,6 +33,8 @@ client.once('clientReady', async () => {
       type: 3
     }]
   });
+
+  await setupRolePanel(client);
 
   cekLive();
   setInterval(cekLive, 60 * 1000);
@@ -75,5 +78,9 @@ async function cekLive() {
     sudahNotif = false;
   }
 }
+
+client.on('interactionCreate', async interaction => {
+  await handleRoleInteraction(interaction);
+});
 
 client.login(DISCORD_TOKEN);
