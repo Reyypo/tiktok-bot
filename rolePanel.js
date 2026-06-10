@@ -8,6 +8,7 @@ const {
 
 const ROLE_PANEL_CHANNEL_ID = process.env.ROLE_PANEL_CHANNEL_ID;
 
+const pendingGenderChoices = new Map();
 const pendingGameChoices = new Map();
 
 const genderRoles = [
@@ -33,13 +34,18 @@ async function setupRolePanel(client) {
 
   const genderEmbed = new EmbedBuilder()
     .setTitle('Pilih Gender Kamu!')
-    .setDescription('Klik menu di bawah ini untuk memilih gender kamu.')
+    .setDescription('Pilih gender kamu, lalu klik **✅ Simpan Gender**.')
     .setColor(0x3498db);
 
   const genderMenu = new StringSelectMenuBuilder()
     .setCustomId('select_gender')
     .setPlaceholder('Pilih Gender Kamu')
     .addOptions(genderRoles);
+
+  const saveGenderButton = new ButtonBuilder()
+    .setCustomId('save_gender')
+    .setLabel('Simpan Gender')
+    .setStyle(ButtonStyle.Success);
 
   const resetGenderButton = new ButtonBuilder()
     .setCustomId('reset_gender')
@@ -69,20 +75,20 @@ async function setupRolePanel(client) {
     .setStyle(ButtonStyle.Danger);
 
   await channel.send({
-  embeds: [genderEmbed],
-  components: [
-    new ActionRowBuilder().addComponents(resetGenderButton),
-    new ActionRowBuilder().addComponents(genderMenu)
-  ]
-});
+    embeds: [genderEmbed],
+    components: [
+      new ActionRowBuilder().addComponents(saveGenderButton, resetGenderButton),
+      new ActionRowBuilder().addComponents(genderMenu)
+    ]
+  });
 
   await channel.send({
-  embeds: [gameEmbed],
-  components: [
-    new ActionRowBuilder().addComponents(saveGameButton, resetGameButton),
-    new ActionRowBuilder().addComponents(gameMenu)
-  ]
-});
+    embeds: [gameEmbed],
+    components: [
+      new ActionRowBuilder().addComponents(saveGameButton, resetGameButton),
+      new ActionRowBuilder().addComponents(gameMenu)
+    ]
+  });
 
   console.log('Role panel terkirim');
 }
@@ -93,26 +99,45 @@ async function handleRoleInteraction(interaction) {
   const member = interaction.member;
 
   if (interaction.customId === 'select_gender') {
+    pendingGenderChoices.set(interaction.user.id, interaction.values[0]);
+    return interaction.deferUpdate();
+  }
+
+  if (interaction.customId === 'save_gender') {
+    const selectedGender = pendingGenderChoices.get(interaction.user.id);
+
+    if (!selectedGender) {
+      return interaction.reply({
+        content: '⚠️ Pilih gender dulu sebelum klik Simpan Gender.',
+        ephemeral: true
+      });
+    }
+
     await member.roles.remove(genderRoles.map(role => role.value)).catch(() => {});
-    await member.roles.add(interaction.values[0]);
+    await member.roles.add(selectedGender);
+
+    pendingGenderChoices.delete(interaction.user.id);
 
     return interaction.reply({
-      content: '✅ Gender kamu berhasil diperbarui.',
+      content: '✅ Gender kamu berhasil disimpan.',
       ephemeral: true
     });
   }
 
   if (interaction.customId === 'select_games') {
     pendingGameChoices.set(interaction.user.id, interaction.values);
-
-    return interaction.reply({
-      content: '✅ Pilihan game kamu sudah dipilih. Klik **Simpan Pilihan** untuk memasang role.',
-      ephemeral: true
-    });
+    return interaction.deferUpdate();
   }
 
   if (interaction.customId === 'save_games') {
-    const selectedGames = pendingGameChoices.get(interaction.user.id) || [];
+    const selectedGames = pendingGameChoices.get(interaction.user.id);
+
+    if (!selectedGames) {
+      return interaction.reply({
+        content: '⚠️ Pilih role game dulu sebelum klik Simpan Pilihan.',
+        ephemeral: true
+      });
+    }
 
     await member.roles.remove(gameRoles.map(role => role.value)).catch(() => {});
 
@@ -130,6 +155,29 @@ async function handleRoleInteraction(interaction) {
 
   if (interaction.customId === 'reset_gender') {
     await member.roles.remove(genderRoles.map(role => role.value)).catch(() => {});
+    pendingGenderChoices.delete(interaction.user.id);
+
+    const newGenderMenu = new StringSelectMenuBuilder()
+      .setCustomId('select_gender')
+      .setPlaceholder('Pilih Gender Kamu')
+      .addOptions(genderRoles);
+
+    const saveGenderButton = new ButtonBuilder()
+      .setCustomId('save_gender')
+      .setLabel('Simpan Gender')
+      .setStyle(ButtonStyle.Success);
+
+    const resetGenderButton = new ButtonBuilder()
+      .setCustomId('reset_gender')
+      .setLabel('Reset Gender Saya')
+      .setStyle(ButtonStyle.Danger);
+
+    await interaction.message.edit({
+      components: [
+        new ActionRowBuilder().addComponents(saveGenderButton, resetGenderButton),
+        new ActionRowBuilder().addComponents(newGenderMenu)
+      ]
+    });
 
     return interaction.reply({
       content: '✅ Gender kamu berhasil direset.',
@@ -160,8 +208,8 @@ async function handleRoleInteraction(interaction) {
 
     await interaction.message.edit({
       components: [
-        new ActionRowBuilder().addComponents(newGameMenu),
-        new ActionRowBuilder().addComponents(saveGameButton, resetGameButton)
+        new ActionRowBuilder().addComponents(saveGameButton, resetGameButton),
+        new ActionRowBuilder().addComponents(newGameMenu)
       ]
     });
 
