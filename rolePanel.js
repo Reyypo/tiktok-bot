@@ -3,7 +3,8 @@ const {
   ActionRowBuilder,
   StringSelectMenuBuilder,
   ButtonBuilder,
-  ButtonStyle
+  ButtonStyle,
+  MessageFlags
 } = require('discord.js');
 
 const ROLE_PANEL_CHANNEL_ID = process.env.ROLE_PANEL_CHANNEL_ID;
@@ -36,10 +37,7 @@ async function setupRolePanel(client) {
   const alreadyExists = oldMessages.some(msg =>
     msg.author.id === client.user.id &&
     msg.embeds.length > 0 &&
-    (
-      msg.embeds[0].title === 'Pilih Gender Kamu!' ||
-      msg.embeds[0].title === 'Pilih Role Game Kamu!'
-    )
+    msg.embeds[0].title === 'REST AREA'
   );
 
   if (alreadyExists) {
@@ -48,10 +46,10 @@ async function setupRolePanel(client) {
   }
 
   const genderEmbed = new EmbedBuilder()
-  .setTitle('REST AREA')
-  .setDescription('**Pilih gender kamu, lalu klik ✅ Simpan Gender.**')
-  .setColor(0x3498db)
-  .setImage('https://cdn.discordapp.com/attachments/1514363278615380281/1514383535916716232/standard_2.gif?ex=6a2b2b12&is=6a29d992&hm=93661b6757ab76125c8f34d5e80b1d6c5168e4c8f8eafaf2994e9131e853ca79&');
+    .setTitle('REST AREA')
+    .setDescription('**Pilih gender kamu, lalu klik ✅ Simpan Gender.**')
+    .setColor(0x3498db)
+    .setImage('https://cdn.discordapp.com/attachments/1514363278615380281/1514383535916716232/standard_2.gif?ex=6a2b2b12&is=6a29d992&hm=93661b6757ab76125c8f34d5e80b1d6c5168e4c8f8eafaf2994e9131e853ca79&');
 
   const genderMenu = new StringSelectMenuBuilder()
     .setCustomId('select_gender')
@@ -69,10 +67,10 @@ async function setupRolePanel(client) {
     .setStyle(ButtonStyle.Danger);
 
   const gameEmbed = new EmbedBuilder()
-  .setTitle('REST AREA')
-  .setDescription('**Pilih game yang kamu mainkan, lalu klik ✅ Simpan Pilihan.**')
-  .setColor(0x3498db)
-  .setImage('https://cdn.discordapp.com/attachments/1514363278615380281/1514394569469333566/standard_5.gif?ex=6a2b3559&is=6a29e3d9&hm=e5c250eb89f08ce8498a748732e24737a451a2f96f4a3bed7a8f8aede5163c99&');
+    .setTitle('REST AREA')
+    .setDescription('**Pilih game yang kamu mainkan, lalu klik ✅ Simpan Pilihan.**')
+    .setColor(0x3498db)
+    .setImage('https://cdn.discordapp.com/attachments/1514363278615380281/1514394569469333566/standard_5.gif?ex=6a2b3559&is=6a29e3d9&hm=e5c250eb89f08ce8498a748732e24737a451a2f96f4a3bed7a8f8aede5163c99&');
 
   const gameMenu = new StringSelectMenuBuilder()
     .setCustomId('select_games')
@@ -110,6 +108,13 @@ async function setupRolePanel(client) {
   console.log('Role panel terkirim');
 }
 
+async function sendPrivateReply(interaction, content) {
+  return interaction.reply({
+    content,
+    flags: MessageFlags.Ephemeral
+  });
+}
+
 async function handleRoleInteraction(interaction) {
   if (!interaction.isStringSelectMenu() && !interaction.isButton()) return;
 
@@ -124,10 +129,7 @@ async function handleRoleInteraction(interaction) {
     const selectedGender = pendingGenderChoices.get(interaction.user.id);
 
     if (!selectedGender) {
-      return interaction.reply({
-        content: '⚠️ Pilih gender dulu sebelum klik Simpan Gender.',
-        ephemeral: true
-      });
+      return sendPrivateReply(interaction, '⚠️ Pilih gender dulu sebelum klik Simpan Gender.');
     }
 
     await member.roles.remove(genderRoles.map(role => role.value)).catch(() => {});
@@ -135,10 +137,7 @@ async function handleRoleInteraction(interaction) {
 
     pendingGenderChoices.delete(interaction.user.id);
 
-    return interaction.reply({
-      content: '✅ Gender kamu berhasil disimpan.',
-      ephemeral: true
-    });
+    return sendPrivateReply(interaction, '✅ Gender kamu berhasil disimpan.');
   }
 
   if (interaction.customId === 'select_games') {
@@ -150,10 +149,7 @@ async function handleRoleInteraction(interaction) {
     const selectedGames = pendingGameChoices.get(interaction.user.id);
 
     if (!selectedGames) {
-      return interaction.reply({
-        content: '⚠️ Pilih role game dulu sebelum klik Simpan Pilihan.',
-        ephemeral: true
-      });
+      return sendPrivateReply(interaction, '⚠️ Pilih role game dulu sebelum klik Simpan Pilihan.');
     }
 
     await member.roles.remove(gameRoles.map(role => role.value)).catch(() => {});
@@ -164,10 +160,7 @@ async function handleRoleInteraction(interaction) {
 
     pendingGameChoices.delete(interaction.user.id);
 
-    return interaction.reply({
-      content: '✅ Role game kamu berhasil disimpan.',
-      ephemeral: true
-    });
+    return sendPrivateReply(interaction, '✅ Role game kamu berhasil disimpan.');
   }
 
   if (interaction.customId === 'reset_gender') {
@@ -196,10 +189,7 @@ async function handleRoleInteraction(interaction) {
       ]
     });
 
-    return interaction.reply({
-      content: '✅ Gender kamu berhasil direset.',
-      ephemeral: true
-    });
+    return sendPrivateReply(interaction, '✅ Gender kamu berhasil direset.');
   }
 
   if (interaction.customId === 'reset_games') {
@@ -230,10 +220,7 @@ async function handleRoleInteraction(interaction) {
       ]
     });
 
-    return interaction.reply({
-      content: '✅ Semua role game kamu berhasil direset.',
-      ephemeral: true
-    });
+    return sendPrivateReply(interaction, '✅ Semua role game kamu berhasil direset.');
   }
 }
 
