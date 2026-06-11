@@ -48,7 +48,7 @@ async function setupRolePanel(client) {
   const genderEmbed = new EmbedBuilder()
   .setAuthor({
   name: 'REST AREA',
-  iconURL: 'https://cdn.discordapp.com/attachments/1514363278615380281/1514689339974746274/standard_6.gif?ex=6a2c47e0&is=6a2af660&hm=633a2c43e95d48e05dfa3c03afca3f6c63f24a8f2d5c0a89a2014cdc7a9f55b1&'
+  iconURL: 'https://cdn.discordapp.com/attachments/1514363278615380281/1514696314208653544/standard_7.gif?ex=6a2c4e5f&is=6a2afcdf&hm=e869f203766df2fa2336490f93cdff47d8562330ed7eeb75fab01e6355c09652&'
 })
     .setDescription('**Pilih gender kamu, lalu klik ✅ Simpan Gender.**')
     .setColor(0x3498db)
@@ -72,7 +72,7 @@ async function setupRolePanel(client) {
   const gameEmbed = new EmbedBuilder()
   .setAuthor({
   name: 'REST AREA',
-  iconURL: 'https://cdn.discordapp.com/attachments/1514363278615380281/1514689339974746274/standard_6.gif?ex=6a2c47e0&is=6a2af660&hm=633a2c43e95d48e05dfa3c03afca3f6c63f24a8f2d5c0a89a2014cdc7a9f55b1&'
+  iconURL: 'https://cdn.discordapp.com/attachments/1514363278615380281/1514696314208653544/standard_7.gif?ex=6a2c4e5f&is=6a2afcdf&hm=e869f203766df2fa2336490f93cdff47d8562330ed7eeb75fab01e6355c09652&'
 })
     .setDescription('**Pilih game yang kamu mainkan, lalu klik ✅ Simpan Pilihan.**')
     .setColor(0x3498db)
