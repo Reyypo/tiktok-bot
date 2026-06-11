@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+</head>
+<body>
+  <h1>Welcome <%= user.username %></h1>
+
+  <img
+    src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png"
+    width="100"
+    style="border-radius:50%"
+  >
+
+  <p>User ID: <%= user.id %></p>
+
+  <a href="/logout">
+    <button>Logout</button>
+  </a>
+</body>
+</html>
