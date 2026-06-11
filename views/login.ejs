@@ -1,161 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>REST AREA</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
+<title>REST AREA</title>
 
-    body {
-      background: #000;
-      color: white;
-      overflow-x: hidden;
-    }
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:Arial,sans-serif;
+}
 
-    nav {
-      width: 100%;
-      height: 90px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 50px;
-    }
+body{
+  min-height:100vh;
+  background:url('/images/bg.png') center center/cover no-repeat;
+  color:white;
+}
 
-    .logo {
-      font-size: 34px;
-      font-weight: 900;
-      letter-spacing: 1px;
-    }
+.overlay{
+  background:rgba(0,0,0,.72);
+  min-height:100vh;
+}
 
-    .menu {
-      display: flex;
-      align-items: center;
-      gap: 30px;
-    }
+nav{
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:30px 60px;
+}
 
-    .menu a {
-      color: white;
-      text-decoration: none;
-      font-size: 18px;
-      font-weight: 700;
-      transition: 0.3s;
-    }
+.logo{
+  font-size:32px;
+  font-weight:900;
+}
 
-    .menu a:hover {
-      color: #5865F2;
-    }
+.menu{
+  display:flex;
+  gap:30px;
+}
 
-    .open-dashboard {
-      background: white;
-      color: black;
-      padding: 16px 30px;
-      border-radius: 999px;
-      text-decoration: none;
-      font-weight: 800;
-      transition: 0.3s;
-    }
+.join-btn{
+  color:white;
+  text-decoration:none;
+  font-size:20px;
+  font-weight:bold;
+}
 
-    .open-dashboard:hover {
-      transform: scale(1.05);
-      background: #5865F2;
-      color: white;
-    }
+.open-dashboard{
+  background:white;
+  color:black;
+  text-decoration:none;
+  padding:15px 30px;
+  border-radius:999px;
+  font-weight:800;
+}
 
-    .hero {
-      width: 100%;
-      text-align: center;
-      padding: 40px 20px 80px;
-    }
+.hero{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  text-align:center;
+  height:75vh;
+}
 
-    .hero img {
-      width: 75%;
-      max-width: 1200px;
-      border-radius: 50px;
-      object-fit: cover;
-      box-shadow: 0 0 40px rgba(88, 101, 242, 0.2);
-    }
+.hero h1{
+  font-size:90px;
+  font-weight:900;
+}
 
-    .hero h1 {
-      margin-top: 60px;
-      font-size: 58px;
-      font-weight: 900;
-    }
-
-    .hero p {
-      margin-top: 20px;
-      color: #b9bbbe;
-      font-size: 20px;
-    }
-
-    @media (max-width: 900px) {
-      nav {
-        padding: 20px;
-      }
-
-      .menu {
-        gap: 15px;
-      }
-
-      .menu a {
-        font-size: 15px;
-      }
-
-      .logo {
-        font-size: 24px;
-      }
-
-      .hero img {
-        width: 95%;
-        border-radius: 30px;
-      }
-
-      .hero h1 {
-        font-size: 36px;
-      }
-
-      .hero p {
-        font-size: 16px;
-      }
-
-      .open-dashboard {
-        padding: 12px 20px;
-      }
-    }
-  </style>
+.hero p{
+  margin-top:15px;
+  color:#ccc;
+  font-size:22px;
+}
+</style>
 </head>
 <body>
 
-  <nav>
-    <div class="logo">REST AREA</div>
+<div class="overlay">
 
-    <div class="menu">
-      <a href="https://discord.gg/FN3CQcTNQx" target="_blank">
-        Join Server
-      </a>
-    </div>
+<nav>
+  <div class="logo">
+    REST AREA
+  </div>
 
-    <a href="/login" class="open-dashboard">
-      Open Dashboard
+  <div class="menu">
+    <a
+      href="https://discord.gg/FN3CQcTNQx"
+      target="_blank"
+      class="join-btn"
+    >
+      Join Server
     </a>
-  </nav>
+  </div>
 
-  <section class="hero">
-    <img
-      src="https://cdn.discordapp.com/attachments/1514363278615380281/1514394569469333566/standard_5.gif?ex=6a2b3559&is=6a29e3d9&hm=e5c250eb89f08ce8498a748732e24737a451a2f96f4a3bed7a8f8aede5163c99&"
-      alt="REST AREA"
-    />
+  <a href="/login" class="open-dashboard">
+    Open Dashboard
+  </a>
+</nav>
 
-    <h1>Welcome to REST AREA Dashboard</h1>
+<section class="hero">
+  <h1>REST AREA</h1>
+  <p>Manage your server easily</p>
+</section>
 
-    <p>Manage your REST AREA server easily with Discord Login</p>
-  </section>
+</div>
 
 </body>
 </html>
