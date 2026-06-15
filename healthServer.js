@@ -127,6 +127,9 @@ function renderDashboard(channels, notice = '') {
         <label for="embedContent">Teks di luar embed (opsional)</label>
         <textarea id="embedContent" name="embedContent" maxlength="2000" placeholder="Contoh: @restareaserver sedang LIVE di TikTok!"></textarea>
 
+        <label for="embedDescription">Teks di dalam embed (opsional)</label>
+        <textarea id="embedDescription" name="embedDescription" maxlength="4096" placeholder="Tulis informasi yang tampil di dalam embed..."></textarea>
+
         <label for="embedColor">Warna embed</label>
         <input id="embedColor" name="embedColor" type="color" value="#fe2c55">
 
@@ -254,13 +257,15 @@ function startHealthServer(client) {
             await channel.send({ content: message, allowedMentions: { parse: [] } });
           } else {
             const content = (body.get('embedContent') || '').trim();
+            const description = (body.get('embedDescription') || '').trim();
             const imageUrl = (body.get('embedImage') || '').trim();
             const thumbnailUrl = (body.get('embedThumbnail') || '').trim();
             const bannerUrl = (body.get('embedBanner') || '').trim();
             const footer = (body.get('embedFooter') || '').trim();
             const color = parseColor(body.get('embedColor') || '#fe2c55');
 
-            if (!imageUrl || content.length > 2000 || footer.length > 2048
+            if (!imageUrl || content.length > 2000 || description.length > 4096
+              || footer.length > 2048
               || color === null || !isHttpUrl(imageUrl)
               || !isHttpUrl(thumbnailUrl) || !isHttpUrl(bannerUrl)) {
               sendHtml(res, 400, renderDashboard(getSendableChannels(client), 'Data embed tidak valid. Periksa warna dan semua URL gambar.'));
@@ -272,6 +277,7 @@ function startHealthServer(client) {
               .setImage(imageUrl)
               .setTimestamp();
 
+            if (description) embed.setDescription(description);
             if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
             if (footer) embed.setFooter({ text: footer });
 
