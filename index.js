@@ -19,11 +19,11 @@ if (missingEnv.length > 0) {
   throw new Error(`Environment variable belum diisi: ${missingEnv.join(', ')}`);
 }
 
-startHealthServer();
-
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
 });
+
+startHealthServer(client);
 
 client.once('clientReady', async () => {
   console.log(`Discord bot online: ${client.user.tag}`);
