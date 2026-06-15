@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const http = require('http');
+const { EmbedBuilder } = require('discord.js');
 
 const MAX_BODY_SIZE = 10_000;
 
@@ -49,6 +50,24 @@ function getSendableChannels(client) {
     });
 }
 
+function isHttpUrl(value) {
+  if (!value) return true;
+
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function parseColor(value) {
+  const normalized = value.replace('#', '');
+  return /^[0-9a-f]{6}$/i.test(normalized)
+    ? Number.parseInt(normalized, 16)
+    : null;
+}
+
 function renderDashboard(channels, notice = '') {
   const options = channels.map(channel => (
     `<option value="${channel.id}">${escapeHtml(channel.guild.name)} / #${escapeHtml(channel.name)}</option>`
@@ -68,9 +87,12 @@ function renderDashboard(channels, notice = '') {
     h1 { margin: 8px 0; font-size: clamp(28px, 5vw, 42px); }
     .subtitle { margin: 0 0 26px; color: #b5bac1; line-height: 1.6; }
     label { display: block; margin: 18px 0 8px; font-weight: 700; }
-    select, textarea { width: 100%; border: 1px solid #4e5058; border-radius: 10px; background: #1e1f22; color: #f2f3f5; padding: 14px; font: inherit; outline: none; }
-    select:focus, textarea:focus { border-color: #5865f2; box-shadow: 0 0 0 3px rgba(88, 101, 242, .18); }
+    select, textarea, input { width: 100%; border: 1px solid #4e5058; border-radius: 10px; background: #1e1f22; color: #f2f3f5; padding: 14px; font: inherit; outline: none; }
+    select:focus, textarea:focus, input:focus { border-color: #5865f2; box-shadow: 0 0 0 3px rgba(88, 101, 242, .18); }
     textarea { min-height: 170px; resize: vertical; line-height: 1.5; }
+    .embed-fields { margin-top: 18px; padding: 18px; border: 1px solid #454750; border-radius: 12px; background: #292b2f; }
+    .embed-fields label:first-child { margin-top: 0; }
+    .hidden { display: none; }
     .row { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; color: #949ba4; font-size: 13px; }
     button { width: 100%; margin-top: 22px; border: 0; border-radius: 10px; padding: 15px; background: #5865f2; color: white; font: inherit; font-weight: 800; cursor: pointer; }
     button:hover { background: #4752c4; }
@@ -88,12 +110,54 @@ function renderDashboard(channels, notice = '') {
     <form method="post" action="/dashboard/send">
       <label for="channelId">Channel tujuan</label>
       <select id="channelId" name="channelId" required>${options}</select>
-      <label for="message">Pesan</label>
-      <textarea id="message" name="message" maxlength="2000" required placeholder="Tulis pesan yang akan dikirim..."></textarea>
-      <div class="row"><span>Mention otomatis dinonaktifkan</span><span>Maksimal 2.000 karakter</span></div>
+
+      <label for="messageType">Tipe pesan</label>
+      <select id="messageType" name="messageType">
+        <option value="plain">Pesan biasa</option>
+        <option value="embed">Embed</option>
+      </select>
+
+      <div id="plainFields">
+        <label for="message">Pesan</label>
+        <textarea id="message" name="message" maxlength="2000" required placeholder="Tulis pesan yang akan dikirim..."></textarea>
+        <div class="row"><span>Mention otomatis dinonaktifkan</span><span>Maksimal 2.000 karakter</span></div>
+      </div>
+
+      <div id="embedFields" class="embed-fields hidden">
+        <label for="embedTitle">Judul embed</label>
+        <input id="embedTitle" name="embedTitle" maxlength="256" placeholder="Contoh: Pengumuman REST AREA">
+
+        <label for="embedDescription">Isi embed</label>
+        <textarea id="embedDescription" name="embedDescription" maxlength="4096" placeholder="Tulis isi embed..."></textarea>
+
+        <label for="embedColor">Warna embed</label>
+        <input id="embedColor" name="embedColor" type="color" value="#5865f2">
+
+        <label for="embedImage">URL gambar atau GIF (opsional)</label>
+        <input id="embedImage" name="embedImage" type="url" placeholder="https://...">
+
+        <label for="embedFooter">Footer (opsional)</label>
+        <input id="embedFooter" name="embedFooter" maxlength="2048" placeholder="REST AREA">
+      </div>
+
       <button type="submit">Kirim ke Discord</button>
     </form>` : '<p class="empty">Bot belum siap atau tidak memiliki channel teks yang bisa dikirimi pesan.</p>'}
   </main>
+  <script>
+    const messageType = document.getElementById('messageType');
+    const plainFields = document.getElementById('plainFields');
+    const embedFields = document.getElementById('embedFields');
+    const message = document.getElementById('message');
+    const embedDescription = document.getElementById('embedDescription');
+
+    messageType?.addEventListener('change', () => {
+      const useEmbed = messageType.value === 'embed';
+      plainFields.classList.toggle('hidden', useEmbed);
+      embedFields.classList.toggle('hidden', !useEmbed);
+      message.required = !useEmbed;
+      embedDescription.required = useEmbed;
+    });
+  </script>
 </body>
 </html>`;
 }
@@ -169,15 +233,48 @@ function startHealthServer(client) {
         try {
           const body = new URLSearchParams(await readBody(req));
           const channelId = body.get('channelId') || '';
+          const messageType = body.get('messageType') === 'embed' ? 'embed' : 'plain';
           const message = (body.get('message') || '').trim();
           const channel = getSendableChannels(client).find(item => item.id === channelId);
 
-          if (!channel || !message || message.length > 2000) {
+          if (!channel) {
             sendHtml(res, 400, renderDashboard(getSendableChannels(client), 'Channel atau pesan tidak valid.'));
             return;
           }
 
-          await channel.send({ content: message, allowedMentions: { parse: [] } });
+          if (messageType === 'plain') {
+            if (!message || message.length > 2000) {
+              sendHtml(res, 400, renderDashboard(getSendableChannels(client), 'Pesan biasa harus berisi 1-2.000 karakter.'));
+              return;
+            }
+
+            await channel.send({ content: message, allowedMentions: { parse: [] } });
+          } else {
+            const title = (body.get('embedTitle') || '').trim();
+            const description = (body.get('embedDescription') || '').trim();
+            const imageUrl = (body.get('embedImage') || '').trim();
+            const footer = (body.get('embedFooter') || '').trim();
+            const color = parseColor(body.get('embedColor') || '#5865f2');
+
+            if (!description || description.length > 4096
+              || title.length > 256 || footer.length > 2048
+              || color === null || !isHttpUrl(imageUrl)) {
+              sendHtml(res, 400, renderDashboard(getSendableChannels(client), 'Data embed tidak valid. Periksa isi, warna, dan URL gambar.'));
+              return;
+            }
+
+            const embed = new EmbedBuilder()
+              .setColor(color)
+              .setDescription(description)
+              .setTimestamp();
+
+            if (title) embed.setTitle(title);
+            if (imageUrl) embed.setImage(imageUrl);
+            if (footer) embed.setFooter({ text: footer });
+
+            await channel.send({ embeds: [embed], allowedMentions: { parse: [] } });
+          }
+
           sendHtml(res, 200, renderDashboard(getSendableChannels(client), `Pesan berhasil dikirim ke #${channel.name}.`));
         } catch (error) {
           console.error('Gagal mengirim pesan dashboard:', error);
