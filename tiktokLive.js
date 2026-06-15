@@ -9,6 +9,7 @@ const { WebcastPushConnection } = require('tiktok-live-connector');
 const CHECK_INTERVAL_MS = 60_000;
 const TIKTOK_COLOR = 0xfe2c55;
 const LIVE_BANNER_URL = 'https://cdn.discordapp.com/attachments/1514363278615380281/1516071949464506389/standard_8.gif?ex=6a314f88&is=6a2ffe08&hm=b41abe3bc03608fda8acf74fcddc9e17410954ecfc7bc57da237a43f041fd196&';
+const LIVE_THUMBNAIL_URL = 'https://cdn.discordapp.com/attachments/1514363278615380281/1514696314208653544/standard_7.gif?ex=6a30eb9f&is=6a2f9a1f&hm=97461db3c5a9cf597b04a16be49997c641cf9a7d34d5600ec6a74ede637138d2&';
 
 function firstUrl(image) {
   return image?.urlList?.[0]
@@ -50,11 +51,10 @@ function buildLiveMessage(username, roomInfo) {
       { name: 'Platform', value: 'TikTok LIVE', inline: true },
       { name: 'Status', value: 'LIVE SEKARANG', inline: true }
     )
+    .setThumbnail(LIVE_THUMBNAIL_URL)
     .setImage(LIVE_BANNER_URL)
     .setFooter({ text: 'REST AREA Live Notification' })
     .setTimestamp();
-
-  if (details.avatarUrl) embed.setThumbnail(details.avatarUrl);
 
   const buttons = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
