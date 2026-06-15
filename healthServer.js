@@ -90,6 +90,7 @@ function renderDashboard(channels, notice = '') {
     select, textarea, input { width: 100%; border: 1px solid #4e5058; border-radius: 10px; background: #1e1f22; color: #f2f3f5; padding: 14px; font: inherit; outline: none; }
     select:focus, textarea:focus, input:focus { border-color: #5865f2; box-shadow: 0 0 0 3px rgba(88, 101, 242, .18); }
     textarea { min-height: 170px; resize: vertical; line-height: 1.5; }
+    input[type="color"] { width: 64px; height: 54px; padding: 5px; cursor: pointer; }
     .embed-fields { margin-top: 18px; padding: 18px; border: 1px solid #454750; border-radius: 12px; background: #292b2f; }
     .embed-fields label:first-child { margin-top: 0; }
     .hidden { display: none; }
@@ -109,7 +110,10 @@ function renderDashboard(channels, notice = '') {
     ${channels.length ? `
     <form method="post" action="/dashboard/send">
       <label for="channelId">Channel tujuan</label>
-      <select id="channelId" name="channelId" required>${options}</select>
+      <select id="channelId" name="channelId" required>
+        <option value="" selected disabled>Pilih channel tujuan...</option>
+        ${options}
+      </select>
 
       <label for="messageType">Tipe pesan</label>
       <select id="messageType" name="messageType">
@@ -124,8 +128,13 @@ function renderDashboard(channels, notice = '') {
       </div>
 
       <div id="embedFields" class="embed-fields hidden">
+        <strong>EMBED</strong>
+
         <label for="embedContent">Teks di luar embed (opsional)</label>
         <textarea id="embedContent" name="embedContent" maxlength="2000" placeholder="Contoh: @restareaserver sedang LIVE di TikTok!"></textarea>
+
+        <label for="embedTitle">Judul (opsional)</label>
+        <input id="embedTitle" name="embedTitle" maxlength="256" placeholder="Contoh: Informasi terbaru">
 
         <label for="embedDescription">Teks di dalam embed (opsional)</label>
         <textarea id="embedDescription" name="embedDescription" maxlength="4096" placeholder="Tulis informasi yang tampil di dalam embed..."></textarea>
@@ -133,8 +142,8 @@ function renderDashboard(channels, notice = '') {
         <label for="embedColor">Warna embed</label>
         <input id="embedColor" name="embedColor" type="color" value="#fe2c55">
 
-        <label for="embedImage">URL gambar utama</label>
-        <input id="embedImage" name="embedImage" type="url" required placeholder="https://...">
+        <label for="embedImage">URL gambar utama (opsional)</label>
+        <input id="embedImage" name="embedImage" type="url" placeholder="https://...">
 
         <label for="embedThumbnail">URL thumbnail kanan atas (opsional)</label>
         <input id="embedThumbnail" name="embedThumbnail" type="url" placeholder="https://...">
@@ -154,14 +163,12 @@ function renderDashboard(channels, notice = '') {
     const plainFields = document.getElementById('plainFields');
     const embedFields = document.getElementById('embedFields');
     const message = document.getElementById('message');
-    const embedImage = document.getElementById('embedImage');
 
     messageType?.addEventListener('change', () => {
       const useEmbed = messageType.value === 'embed';
       plainFields.classList.toggle('hidden', useEmbed);
       embedFields.classList.toggle('hidden', !useEmbed);
       message.required = !useEmbed;
-      embedImage.required = useEmbed;
     });
   </script>
 </body>
@@ -257,6 +264,7 @@ function startHealthServer(client) {
             await channel.send({ content: message, allowedMentions: { parse: [] } });
           } else {
             const content = (body.get('embedContent') || '').trim();
+            const title = (body.get('embedTitle') || '').trim();
             const description = (body.get('embedDescription') || '').trim();
             const imageUrl = (body.get('embedImage') || '').trim();
             const thumbnailUrl = (body.get('embedThumbnail') || '').trim();
@@ -264,7 +272,10 @@ function startHealthServer(client) {
             const footer = (body.get('embedFooter') || '').trim();
             const color = parseColor(body.get('embedColor') || '#fe2c55');
 
-            if (!imageUrl || content.length > 2000 || description.length > 4096
+            const hasEmbedContent = title || description || imageUrl || thumbnailUrl || bannerUrl;
+
+            if (!hasEmbedContent || content.length > 2000 || title.length > 256
+              || description.length > 4096
               || footer.length > 2048
               || color === null || !isHttpUrl(imageUrl)
               || !isHttpUrl(thumbnailUrl) || !isHttpUrl(bannerUrl)) {
@@ -274,10 +285,11 @@ function startHealthServer(client) {
 
             const embed = new EmbedBuilder()
               .setColor(color)
-              .setImage(imageUrl)
               .setTimestamp();
 
+            if (title) embed.setTitle(title);
             if (description) embed.setDescription(description);
+            if (imageUrl) embed.setImage(imageUrl);
             if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
             if (footer) embed.setFooter({ text: footer });
 
