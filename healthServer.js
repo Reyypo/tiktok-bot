@@ -47,42 +47,129 @@ function isAuthorized(req) {
   return Boolean(session) && safeEqual(session, getSessionToken());
 }
 
-function renderLogin(error = '') {
+function renderLanding(error = '', showLogin = false) {
+  const tiktokUsername = process.env.TIKTOK_USERNAME || 'restareaserver';
+  const profileImage = 'https://cdn.discordapp.com/attachments/1514363278615380281/1514696314208653544/standard_7.gif?ex=6a30eb9f&is=6a2f9a1f&hm=97461db3c5a9cf597b04a16be49997c641cf9a7d34d5600ec6a74ede637138d2&';
+
   return `<!doctype html>
 <html lang="id">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Login REST AREA Dashboard</title>
+  <meta name="theme-color" content="#17243d">
+  <title>REST AREA</title>
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at top, #30204a, #111218 55%); color: #f4f4f5; font-family: Arial, sans-serif; }
-    main { width: min(420px, 100%); padding: 34px; background: rgba(35, 36, 40, .97); border: 1px solid #454750; border-radius: 22px; box-shadow: 0 24px 70px rgba(0, 0, 0, .45); }
-    .logo { width: 62px; height: 62px; display: grid; place-items: center; margin: 0 auto 20px; border-radius: 18px; background: linear-gradient(135deg, #5865f2, #fe2c55); font-size: 25px; font-weight: 900; }
-    h1 { margin: 0; text-align: center; font-size: 30px; }
-    .subtitle { margin: 10px 0 26px; color: #b5bac1; text-align: center; line-height: 1.5; }
+    html { min-height: 100%; background: #142238; }
+    body { margin: 0; min-height: 100vh; color: white; font-family: Arial, sans-serif; background: linear-gradient(180deg, #142238 0%, #513f68 31%, #c36acc 61%, #3e6d88 100%); }
+    .page { width: min(720px, 100%); min-height: 100vh; margin: 0 auto; padding: 28px 28px 40px; position: relative; text-align: center; }
+    .icon-button { width: 44px; height: 44px; display: grid; place-items: center; position: absolute; top: 28px; border: 0; border-radius: 15px; background: rgba(238, 241, 248, .72); color: #152033; font-size: 21px; cursor: pointer; box-shadow: 0 8px 24px rgba(0, 0, 0, .12); }
+    .admin-button { left: 28px; }
+    .share-button { right: 28px; }
+    .profile { padding-top: 76px; }
+    .avatar { width: 104px; height: 104px; object-fit: cover; border-radius: 50%; border: 4px solid rgba(9, 13, 23, .78); background: #111827; }
+    h1 { margin: 16px 0 5px; font-size: clamp(25px, 6vw, 34px); }
+    .bio { margin: 0 auto; max-width: 600px; font-weight: 700; line-height: 1.5; }
+    .social { display: inline-block; margin: 22px 0 26px; color: white; font-size: 34px; font-weight: 900; text-decoration: none; }
+    .links { display: grid; gap: 16px; }
+    .link-card { min-height: 72px; display: grid; grid-template-columns: 54px 1fr 30px; align-items: center; gap: 14px; padding: 9px; border: 1px solid rgba(255, 255, 255, .82); color: white; text-decoration: none; background: rgba(54, 43, 78, .20); backdrop-filter: blur(8px); transition: transform .2s, background .2s; }
+    .link-card:hover { transform: translateY(-2px); background: rgba(255, 255, 255, .12); }
+    .link-card img { width: 54px; height: 54px; object-fit: cover; background: #111827; }
+    .link-copy { text-align: center; font-weight: 800; }
+    .link-copy small { display: block; margin-top: 4px; opacity: .72; font-weight: 600; }
+    .dots { font-size: 20px; opacity: .7; }
+    footer { margin-top: 34vh; font-size: 13px; font-weight: 700; opacity: .9; }
+    .modal { position: fixed; inset: 0; display: none; place-items: center; padding: 20px; background: rgba(8, 10, 16, .72); backdrop-filter: blur(8px); z-index: 10; }
+    .modal.open { display: grid; }
+    .login-card { width: min(430px, 100%); position: relative; padding: 34px; border: 1px solid #4e5058; border-radius: 22px; background: #232428; color: #f4f4f5; text-align: left; box-shadow: 0 25px 80px rgba(0, 0, 0, .55); }
+    .close { position: absolute; top: 14px; right: 16px; border: 0; background: transparent; color: #b5bac1; font-size: 28px; cursor: pointer; }
+    .login-logo { width: 62px; height: 62px; display: grid; place-items: center; margin: 0 auto 20px; border-radius: 18px; background: linear-gradient(135deg, #7c5cff, #fe2c55); font-size: 25px; font-weight: 900; }
+    .login-card h2 { margin: 0; text-align: center; font-size: 30px; }
+    .login-subtitle { margin: 10px 0 24px; color: #c6c8ce; text-align: center; line-height: 1.5; }
     label { display: block; margin: 16px 0 8px; font-weight: 700; }
     input { width: 100%; padding: 14px; border: 1px solid #4e5058; border-radius: 10px; background: #1e1f22; color: #f2f3f5; font: inherit; outline: none; }
     input:focus { border-color: #5865f2; box-shadow: 0 0 0 3px rgba(88, 101, 242, .18); }
-    button { width: 100%; margin-top: 24px; padding: 15px; border: 0; border-radius: 10px; background: #5865f2; color: white; font: inherit; font-weight: 800; cursor: pointer; }
-    button:hover { background: #4752c4; }
+    .password-wrap { position: relative; }
+    .password-wrap input { padding-right: 52px; }
+    .password-toggle { width: 42px; height: 42px; position: absolute; right: 5px; top: 5px; border: 0; background: transparent; color: #b5bac1; font-size: 20px; cursor: pointer; }
+    .login-submit { width: 100%; margin-top: 24px; padding: 15px; border: 0; border-radius: 10px; background: #5865f2; color: white; font: inherit; font-weight: 800; cursor: pointer; }
+    .login-submit:hover { background: #4752c4; }
     .error { margin-bottom: 18px; padding: 12px; border-radius: 9px; background: #542f35; color: #ffb4b4; text-align: center; }
+    @media (max-width: 560px) { .page { padding: 20px 18px 34px; } .icon-button { top: 20px; } .admin-button { left: 18px; } .share-button { right: 18px; } .profile { padding-top: 82px; } footer { margin-top: 25vh; } .login-card { padding: 30px 22px; } }
   </style>
 </head>
 <body>
-  <main>
-    <div class="logo">RA</div>
-    <h1>Dashboard Login</h1>
-    <p class="subtitle">Masuk untuk mengirim pesan melalui REST AREA Bot.</p>
-    ${error ? `<div class="error">${escapeHtml(error)}</div>` : ''}
-    <form method="post" action="/dashboard/login">
-      <label for="username">Username</label>
-      <input id="username" name="username" autocomplete="username" required autofocus>
-      <label for="password">Password</label>
-      <input id="password" name="password" type="password" autocomplete="current-password" required>
-      <button type="submit">Masuk ke Dashboard</button>
-    </form>
+  <main class="page">
+    <button class="icon-button admin-button" id="adminButton" type="button" aria-label="Login admin" title="Admin">&#9881;</button>
+    <button class="icon-button share-button" id="shareButton" type="button" aria-label="Bagikan halaman" title="Bagikan">&#8593;</button>
+
+    <section class="profile">
+      <img class="avatar" src="${profileImage}" alt="REST AREA">
+      <h1>restareaserver</h1>
+      <p class="bio">Terimakasih sudah support guys. Thanks for your support, guys.</p>
+      <a class="social" href="https://www.tiktok.com/@${encodeURIComponent(tiktokUsername)}" target="_blank" rel="noopener" aria-label="TikTok">♪</a>
+    </section>
+
+    <section class="links">
+      <a class="link-card" href="https://discord.gg/FN3CQcTNQx" target="_blank" rel="noopener">
+        <img src="${profileImage}" alt="Discord REST AREA">
+        <span class="link-copy">REST AREA<small>Discord Server - Free to join</small></span>
+        <span class="dots">&#8942;</span>
+      </a>
+      <a class="link-card" href="https://www.tiktok.com/@${encodeURIComponent(tiktokUsername)}" target="_blank" rel="noopener">
+        <img src="${profileImage}" alt="TikTok REST AREA">
+        <span class="link-copy">TikTok @${escapeHtml(tiktokUsername)}<small>Follow dan tonton live terbaru</small></span>
+        <span class="dots">&#8942;</span>
+      </a>
+    </section>
+
+    <footer>REST AREA &bull; Discord Community &bull; TikTok Live</footer>
   </main>
+
+  <div class="modal${showLogin || error ? ' open' : ''}" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <section class="login-card">
+      <button class="close" id="closeLogin" type="button" aria-label="Tutup">&times;</button>
+      <div class="login-logo">RA</div>
+      <h2 id="loginTitle">Dashboard Login</h2>
+      <p class="login-subtitle">Khusus admin REST AREA.</p>
+      ${error ? `<div class="error">${escapeHtml(error)}</div>` : ''}
+      <form method="post" action="/dashboard/login">
+        <label for="username">Username</label>
+        <input id="username" name="username" autocomplete="username" required>
+        <label for="password">Password</label>
+        <div class="password-wrap">
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+          <button class="password-toggle" id="passwordToggle" type="button" aria-label="Tampilkan password">&#128065;</button>
+        </div>
+        <button class="login-submit" type="submit">Masuk ke Dashboard</button>
+      </form>
+    </section>
+  </div>
+  <script>
+    const modal = document.getElementById('loginModal');
+    const adminButton = document.getElementById('adminButton');
+    const closeLogin = document.getElementById('closeLogin');
+    const password = document.getElementById('password');
+    const passwordToggle = document.getElementById('passwordToggle');
+
+    adminButton.addEventListener('click', () => modal.classList.add('open'));
+    closeLogin.addEventListener('click', () => modal.classList.remove('open'));
+    modal.addEventListener('click', event => {
+      if (event.target === modal) modal.classList.remove('open');
+    });
+    passwordToggle.addEventListener('click', () => {
+      const visible = password.type === 'text';
+      password.type = visible ? 'password' : 'text';
+      passwordToggle.setAttribute('aria-label', visible ? 'Tampilkan password' : 'Sembunyikan password');
+    });
+    document.getElementById('shareButton').addEventListener('click', async () => {
+      if (navigator.share) {
+        await navigator.share({ title: document.title, url: location.href }).catch(() => {});
+      } else {
+        await navigator.clipboard?.writeText(location.href);
+      }
+    });
+  </script>
 </body>
 </html>`;
 }
@@ -251,7 +338,12 @@ function startHealthServer(client) {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
-    if (url.pathname === '/' || url.pathname === '/health') {
+    if (url.pathname === '/') {
+      sendHtml(res, 200, renderLanding('', url.searchParams.get('admin') === '1'));
+      return;
+    }
+
+    if (url.pathname === '/health') {
       res.writeHead(200, {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-store'
@@ -278,7 +370,8 @@ function startHealthServer(client) {
           return;
         }
 
-        sendHtml(res, 200, renderLogin());
+        res.writeHead(303, { Location: '/?admin=1' });
+        res.end();
         return;
       }
 
@@ -297,7 +390,7 @@ function startHealthServer(client) {
           const expectedPassword = process.env.DASHBOARD_PASSWORD;
 
           if (!safeEqual(username, expectedUsername) || !safeEqual(password, expectedPassword)) {
-            sendHtml(res, 401, renderLogin('Username atau password salah.'));
+            sendHtml(res, 401, renderLanding('Username atau password salah.', true));
             return;
           }
 
@@ -308,14 +401,14 @@ function startHealthServer(client) {
           res.end();
         } catch (error) {
           console.error('Login dashboard gagal:', error);
-          sendHtml(res, 400, renderLogin('Login gagal. Silakan coba lagi.'));
+          sendHtml(res, 400, renderLanding('Login gagal. Silakan coba lagi.', true));
         }
         return;
       }
 
       if (req.method === 'GET' && url.pathname === '/dashboard/logout') {
         res.writeHead(303, {
-          Location: '/dashboard/login',
+          Location: '/',
           'Set-Cookie': 'dashboard_session=; Path=/dashboard; HttpOnly; Secure; SameSite=Strict; Max-Age=0'
         });
         res.end();
@@ -323,7 +416,7 @@ function startHealthServer(client) {
       }
 
       if (!isAuthorized(req)) {
-        res.writeHead(303, { Location: '/dashboard/login' });
+        res.writeHead(303, { Location: '/?admin=1' });
         res.end();
         return;
       }
