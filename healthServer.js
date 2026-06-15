@@ -121,6 +121,11 @@ function renderLanding(error = '', showLogin = false) {
         <span class="link-copy">TikTok @${escapeHtml(tiktokUsername)}<small>Follow dan tonton live terbaru</small></span>
         <span class="dots">&#8942;</span>
       </a>
+      <a class="link-card" href="https://sociabuzz.com/restareaserver/donate" target="_blank" rel="noopener">
+        <img src="${profileImage}" alt="Sociabuzz REST AREA">
+        <span class="link-copy">Sociabuzz REST AREA<small>Support dan kirim donasi</small></span>
+        <span class="dots">&#8942;</span>
+      </a>
     </section>
 
     <footer>REST AREA &bull; Discord Community &bull; TikTok Live</footer>
@@ -370,7 +375,7 @@ function startHealthServer(client) {
           return;
         }
 
-        res.writeHead(303, { Location: '/?admin=1' });
+        res.writeHead(303, { Location: '/' });
         res.end();
         return;
       }
@@ -416,7 +421,7 @@ function startHealthServer(client) {
       }
 
       if (!isAuthorized(req)) {
-        res.writeHead(303, { Location: '/?admin=1' });
+        res.writeHead(303, { Location: '/' });
         res.end();
         return;
       }
