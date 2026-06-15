@@ -124,20 +124,23 @@ function renderDashboard(channels, notice = '') {
       </div>
 
       <div id="embedFields" class="embed-fields hidden">
-        <label for="embedTitle">Judul embed</label>
-        <input id="embedTitle" name="embedTitle" maxlength="256" placeholder="Contoh: Pengumuman REST AREA">
-
-        <label for="embedDescription">Isi embed</label>
-        <textarea id="embedDescription" name="embedDescription" maxlength="4096" placeholder="Tulis isi embed..."></textarea>
+        <label for="embedContent">Teks di luar embed (opsional)</label>
+        <textarea id="embedContent" name="embedContent" maxlength="2000" placeholder="Contoh: @restareaserver sedang LIVE di TikTok!"></textarea>
 
         <label for="embedColor">Warna embed</label>
-        <input id="embedColor" name="embedColor" type="color" value="#5865f2">
+        <input id="embedColor" name="embedColor" type="color" value="#fe2c55">
 
-        <label for="embedImage">URL gambar atau GIF (opsional)</label>
-        <input id="embedImage" name="embedImage" type="url" placeholder="https://...">
+        <label for="embedImage">URL gambar utama</label>
+        <input id="embedImage" name="embedImage" type="url" required placeholder="https://...">
+
+        <label for="embedThumbnail">URL thumbnail kanan atas (opsional)</label>
+        <input id="embedThumbnail" name="embedThumbnail" type="url" placeholder="https://...">
+
+        <label for="embedBanner">URL banner kecil bawah (opsional)</label>
+        <input id="embedBanner" name="embedBanner" type="url" placeholder="https://...">
 
         <label for="embedFooter">Footer (opsional)</label>
-        <input id="embedFooter" name="embedFooter" maxlength="2048" placeholder="REST AREA">
+        <input id="embedFooter" name="embedFooter" maxlength="2048" value="REST AREA Live Notification" placeholder="REST AREA Live Notification">
       </div>
 
       <button type="submit">Kirim ke Discord</button>
@@ -148,14 +151,14 @@ function renderDashboard(channels, notice = '') {
     const plainFields = document.getElementById('plainFields');
     const embedFields = document.getElementById('embedFields');
     const message = document.getElementById('message');
-    const embedDescription = document.getElementById('embedDescription');
+    const embedImage = document.getElementById('embedImage');
 
     messageType?.addEventListener('change', () => {
       const useEmbed = messageType.value === 'embed';
       plainFields.classList.toggle('hidden', useEmbed);
       embedFields.classList.toggle('hidden', !useEmbed);
       message.required = !useEmbed;
-      embedDescription.required = useEmbed;
+      embedImage.required = useEmbed;
     });
   </script>
 </body>
@@ -250,29 +253,39 @@ function startHealthServer(client) {
 
             await channel.send({ content: message, allowedMentions: { parse: [] } });
           } else {
-            const title = (body.get('embedTitle') || '').trim();
-            const description = (body.get('embedDescription') || '').trim();
+            const content = (body.get('embedContent') || '').trim();
             const imageUrl = (body.get('embedImage') || '').trim();
+            const thumbnailUrl = (body.get('embedThumbnail') || '').trim();
+            const bannerUrl = (body.get('embedBanner') || '').trim();
             const footer = (body.get('embedFooter') || '').trim();
-            const color = parseColor(body.get('embedColor') || '#5865f2');
+            const color = parseColor(body.get('embedColor') || '#fe2c55');
 
-            if (!description || description.length > 4096
-              || title.length > 256 || footer.length > 2048
-              || color === null || !isHttpUrl(imageUrl)) {
-              sendHtml(res, 400, renderDashboard(getSendableChannels(client), 'Data embed tidak valid. Periksa isi, warna, dan URL gambar.'));
+            if (!imageUrl || content.length > 2000 || footer.length > 2048
+              || color === null || !isHttpUrl(imageUrl)
+              || !isHttpUrl(thumbnailUrl) || !isHttpUrl(bannerUrl)) {
+              sendHtml(res, 400, renderDashboard(getSendableChannels(client), 'Data embed tidak valid. Periksa warna dan semua URL gambar.'));
               return;
             }
 
             const embed = new EmbedBuilder()
               .setColor(color)
-              .setDescription(description)
+              .setImage(imageUrl)
               .setTimestamp();
 
-            if (title) embed.setTitle(title);
-            if (imageUrl) embed.setImage(imageUrl);
+            if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
             if (footer) embed.setFooter({ text: footer });
 
-            await channel.send({ embeds: [embed], allowedMentions: { parse: [] } });
+            const embeds = [embed];
+
+            if (bannerUrl) {
+              embeds.push(new EmbedBuilder().setColor(color).setImage(bannerUrl));
+            }
+
+            await channel.send({
+              ...(content && { content }),
+              embeds,
+              allowedMentions: { parse: [] }
+            });
           }
 
           sendHtml(res, 200, renderDashboard(getSendableChannels(client), `Pesan berhasil dikirim ke #${channel.name}.`));
