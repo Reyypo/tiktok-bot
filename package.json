@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "check": "node --check index.js && node --check rolePanel.js && node --check tiktokLive.js"
+    "check": "node --check index.js && node --check healthServer.js && node --check rolePanel.js && node --check tiktokLive.js"
   },
   "keywords": [],
   "author": "",

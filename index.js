@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const { Client, GatewayIntentBits } = require('discord.js');
 
+const { startHealthServer } = require('./healthServer');
 const { setupRolePanel, handleRoleInteraction } = require('./rolePanel');
 const { startTikTokLiveChecker } = require('./tiktokLive');
 
@@ -17,6 +18,8 @@ const missingEnv = requiredEnv.filter(name => !process.env[name]);
 if (missingEnv.length > 0) {
   throw new Error(`Environment variable belum diisi: ${missingEnv.join(', ')}`);
 }
+
+startHealthServer();
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
