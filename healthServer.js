@@ -21,24 +21,70 @@ function safeEqual(actual, expected) {
     && crypto.timingSafeEqual(actualBuffer, expectedBuffer);
 }
 
-function isAuthorized(req) {
-  const username = process.env.DASHBOARD_USERNAME || 'admin';
-  const password = process.env.DASHBOARD_PASSWORD;
-  const authorization = req.headers.authorization || '';
+function getCookie(req, name) {
+  const cookies = (req.headers.cookie || '').split(';');
 
-  if (!password || !authorization.startsWith('Basic ')) return false;
-
-  try {
-    const credentials = Buffer.from(authorization.slice(6), 'base64').toString();
-    const separator = credentials.indexOf(':');
-
-    if (separator === -1) return false;
-
-    return safeEqual(credentials.slice(0, separator), username)
-      && safeEqual(credentials.slice(separator + 1), password);
-  } catch {
-    return false;
+  for (const cookie of cookies) {
+    const [key, ...value] = cookie.trim().split('=');
+    if (key === name) return decodeURIComponent(value.join('='));
   }
+
+  return '';
+}
+
+function getSessionToken() {
+  const username = process.env.DASHBOARD_USERNAME || 'admin';
+  const password = process.env.DASHBOARD_PASSWORD || '';
+
+  return crypto
+    .createHmac('sha256', password)
+    .update(`rest-area-dashboard:${username}`)
+    .digest('hex');
+}
+
+function isAuthorized(req) {
+  const session = getCookie(req, 'dashboard_session');
+  return Boolean(session) && safeEqual(session, getSessionToken());
+}
+
+function renderLogin(error = '') {
+  return `<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login REST AREA Dashboard</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at top, #30204a, #111218 55%); color: #f4f4f5; font-family: Arial, sans-serif; }
+    main { width: min(420px, 100%); padding: 34px; background: rgba(35, 36, 40, .97); border: 1px solid #454750; border-radius: 22px; box-shadow: 0 24px 70px rgba(0, 0, 0, .45); }
+    .logo { width: 62px; height: 62px; display: grid; place-items: center; margin: 0 auto 20px; border-radius: 18px; background: linear-gradient(135deg, #5865f2, #fe2c55); font-size: 25px; font-weight: 900; }
+    h1 { margin: 0; text-align: center; font-size: 30px; }
+    .subtitle { margin: 10px 0 26px; color: #b5bac1; text-align: center; line-height: 1.5; }
+    label { display: block; margin: 16px 0 8px; font-weight: 700; }
+    input { width: 100%; padding: 14px; border: 1px solid #4e5058; border-radius: 10px; background: #1e1f22; color: #f2f3f5; font: inherit; outline: none; }
+    input:focus { border-color: #5865f2; box-shadow: 0 0 0 3px rgba(88, 101, 242, .18); }
+    button { width: 100%; margin-top: 24px; padding: 15px; border: 0; border-radius: 10px; background: #5865f2; color: white; font: inherit; font-weight: 800; cursor: pointer; }
+    button:hover { background: #4752c4; }
+    .error { margin-bottom: 18px; padding: 12px; border-radius: 9px; background: #542f35; color: #ffb4b4; text-align: center; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="logo">RA</div>
+    <h1>Dashboard Login</h1>
+    <p class="subtitle">Masuk untuk mengirim pesan melalui REST AREA Bot.</p>
+    ${error ? `<div class="error">${escapeHtml(error)}</div>` : ''}
+    <form method="post" action="/dashboard/login">
+      <label for="username">Username</label>
+      <input id="username" name="username" autocomplete="username" required autofocus>
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+      <button type="submit">Masuk ke Dashboard</button>
+    </form>
+  </main>
+</body>
+</html>`;
 }
 
 function getSendableChannels(client) {
@@ -99,11 +145,14 @@ function renderDashboard(channels, notice = '') {
     button:hover { background: #4752c4; }
     .notice { margin: 0 0 20px; padding: 13px 15px; border-radius: 10px; background: #214d38; color: #b8f7d1; }
     .empty { color: #ffb4b4; }
+    .topbar { display: flex; align-items: start; justify-content: space-between; gap: 20px; }
+    .logout { color: #b5bac1; text-decoration: none; font-size: 14px; font-weight: 700; }
+    .logout:hover { color: white; }
   </style>
 </head>
 <body>
   <main>
-    <div class="eyebrow">REST AREA BOT</div>
+    <div class="topbar"><div class="eyebrow">REST AREA BOT</div><a class="logout" href="/dashboard/logout">Keluar</a></div>
     <h1>Kirim Pesan Discord</h1>
     <p class="subtitle">Pilih channel yang dapat diakses bot, tulis pesan, lalu kirim langsung dari dashboard.</p>
     ${notice ? `<div class="notice">${escapeHtml(notice)}</div>` : ''}
@@ -222,12 +271,60 @@ function startHealthServer(client) {
         return;
       }
 
-      if (!isAuthorized(req)) {
-        res.writeHead(401, {
-          'WWW-Authenticate': 'Basic realm="REST AREA Dashboard"',
-          'Content-Type': 'text/plain; charset=utf-8'
+      if (req.method === 'GET' && url.pathname === '/dashboard/login') {
+        if (isAuthorized(req)) {
+          res.writeHead(303, { Location: '/dashboard' });
+          res.end();
+          return;
+        }
+
+        sendHtml(res, 200, renderLogin());
+        return;
+      }
+
+      if (req.method === 'POST' && url.pathname === '/dashboard/login') {
+        if (req.headers['sec-fetch-site'] && req.headers['sec-fetch-site'] !== 'same-origin') {
+          res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('Request ditolak');
+          return;
+        }
+
+        try {
+          const body = new URLSearchParams(await readBody(req));
+          const username = body.get('username') || '';
+          const password = body.get('password') || '';
+          const expectedUsername = process.env.DASHBOARD_USERNAME || 'admin';
+          const expectedPassword = process.env.DASHBOARD_PASSWORD;
+
+          if (!safeEqual(username, expectedUsername) || !safeEqual(password, expectedPassword)) {
+            sendHtml(res, 401, renderLogin('Username atau password salah.'));
+            return;
+          }
+
+          res.writeHead(303, {
+            Location: '/dashboard',
+            'Set-Cookie': `dashboard_session=${getSessionToken()}; Path=/dashboard; HttpOnly; Secure; SameSite=Strict; Max-Age=604800`
+          });
+          res.end();
+        } catch (error) {
+          console.error('Login dashboard gagal:', error);
+          sendHtml(res, 400, renderLogin('Login gagal. Silakan coba lagi.'));
+        }
+        return;
+      }
+
+      if (req.method === 'GET' && url.pathname === '/dashboard/logout') {
+        res.writeHead(303, {
+          Location: '/dashboard/login',
+          'Set-Cookie': 'dashboard_session=; Path=/dashboard; HttpOnly; Secure; SameSite=Strict; Max-Age=0'
         });
-        res.end('Login diperlukan');
+        res.end();
+        return;
+      }
+
+      if (!isAuthorized(req)) {
+        res.writeHead(303, { Location: '/dashboard/login' });
+        res.end();
         return;
       }
 
