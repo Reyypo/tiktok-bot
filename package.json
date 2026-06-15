@@ -1,10 +1,11 @@
 {
   "name": "tiktok-bot",
   "version": "1.0.0",
-  "description": "",
+  "description": "Discord role panel and TikTok Live notifier",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "check": "node --check index.js && node --check rolePanel.js && node --check tiktokLive.js"
   },
   "keywords": [],
   "author": "",
@@ -13,11 +14,6 @@
   "dependencies": {
     "discord.js": "^14.26.4",
     "dotenv": "^17.4.2",
-    "ejs": "^6.0.1",
-    "express": "^5.2.1",
-    "express-session": "^1.19.0",
-    "passport": "^0.7.0",
-    "passport-discord": "^0.1.4",
     "tiktok-live-connector": "^2.1.1-beta1"
   }
 }
