@@ -1,8 +1,14 @@
 const crypto = require('crypto');
+const fs = require('fs');
 const http = require('http');
+const path = require('path');
 const { EmbedBuilder } = require('discord.js');
 
 const MAX_BODY_SIZE = 10_000;
+const REST_AREA_GIF_URL = '/assets/rest-area.gif';
+const REST_AREA_GIF_PATH = path.join(__dirname, 'assets', 'rest-area.gif');
+const REST_AREA_LOGO_URL = '/assets/rest-area-logo.gif';
+const REST_AREA_LOGO_PATH = path.join(__dirname, 'assets', 'rest-area-logo.gif');
 
 function escapeHtml(value) {
   return String(value)
@@ -49,7 +55,8 @@ function isAuthorized(req) {
 
 function renderLanding(error = '', showLogin = false) {
   const tiktokUsername = process.env.TIKTOK_USERNAME || 'restareaserver';
-  const profileImage = 'https://cdn.discordapp.com/attachments/1514363278615380281/1516071949464506389/standard_8.gif?ex=6a314f88&is=6a2ffe08&hm=b41abe3bc03608fda8acf74fcddc9e17410954ecfc7bc57da237a43f041fd196&';
+  const profileImage = REST_AREA_GIF_URL;
+  const logoImage = REST_AREA_LOGO_URL;
 
   return `<!doctype html>
 <html lang="id">
@@ -67,7 +74,7 @@ function renderLanding(error = '', showLogin = false) {
     .admin-button { left: 28px; }
     .share-button { right: 28px; }
     .profile { padding-top: 76px; }
-    .avatar { width: 104px; height: 104px; object-fit: cover; border-radius: 50%; border: 4px solid rgba(9, 13, 23, .78); background: #111827; }
+    .avatar { width: min(340px, 74vw); aspect-ratio: 16 / 9; height: auto; object-fit: contain; border-radius: 8px; background: transparent; }
     h1 { margin: 16px 0 5px; font-size: clamp(25px, 6vw, 34px); }
     .bio { margin: 0 auto; max-width: 600px; font-weight: 700; line-height: 1.5; }
     .social { width: 150px; height: 42px; display: inline-flex; align-items: center; justify-content: center; margin: 22px 0 26px; text-decoration: none; }
@@ -105,7 +112,7 @@ function renderLanding(error = '', showLogin = false) {
     <button class="icon-button share-button" id="shareButton" type="button" aria-label="Bagikan halaman" title="Bagikan">&#8593;</button>
 
     <section class="profile">
-      <img class="avatar" src="${profileImage}" alt="REST AREA">
+      <img class="avatar" src="${logoImage}" alt="REST AREA">
       <h1>restareaserver</h1>
       <p class="bio">Thanks for your support.</p>
       <a class="social" href="https://www.tiktok.com/@${encodeURIComponent(tiktokUsername)}" target="_blank" rel="noopener" aria-label="TikTok">
@@ -348,6 +355,40 @@ function startHealthServer(client) {
 
     if (url.pathname === '/') {
       sendHtml(res, 200, renderLanding('', url.searchParams.get('admin') === '1'));
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === REST_AREA_GIF_URL) {
+      fs.readFile(REST_AREA_GIF_PATH, (error, file) => {
+        if (error) {
+          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('GIF tidak ditemukan');
+          return;
+        }
+
+        res.writeHead(200, {
+          'Content-Type': 'image/gif',
+          'Cache-Control': 'public, max-age=31536000, immutable'
+        });
+        res.end(file);
+      });
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === REST_AREA_LOGO_URL) {
+      fs.readFile(REST_AREA_LOGO_PATH, (error, file) => {
+        if (error) {
+          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('Logo tidak ditemukan');
+          return;
+        }
+
+        res.writeHead(200, {
+          'Content-Type': 'image/gif',
+          'Cache-Control': 'public, max-age=31536000, immutable'
+        });
+        res.end(file);
+      });
       return;
     }
 
