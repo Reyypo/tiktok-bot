@@ -9,6 +9,8 @@ const REST_AREA_GIF_URL = '/assets/rest-area.gif';
 const REST_AREA_GIF_PATH = path.join(__dirname, 'assets', 'rest-area.gif');
 const REST_AREA_LOGO_URL = '/assets/rest-area-logo.gif';
 const REST_AREA_LOGO_PATH = path.join(__dirname, 'assets', 'rest-area-logo.gif');
+const REST_AREA_BANNER_URL = '/assets/rest-area-banner.gif';
+const REST_AREA_BANNER_PATH = path.join(__dirname, 'assets', 'rest-area-banner.gif');
 
 function escapeHtml(value) {
   return String(value)
@@ -57,6 +59,7 @@ function renderLanding(error = '', showLogin = false) {
   const tiktokUsername = process.env.TIKTOK_USERNAME || 'restareaserver';
   const profileImage = REST_AREA_GIF_URL;
   const logoImage = REST_AREA_LOGO_URL;
+  const bannerImage = REST_AREA_BANNER_URL;
 
   return `<!doctype html>
 <html lang="id">
@@ -77,7 +80,7 @@ function renderLanding(error = '', showLogin = false) {
     .avatar { width: min(340px, 74vw); aspect-ratio: 16 / 9; height: auto; object-fit: contain; border-radius: 8px; background: transparent; }
     h1 { margin: 16px 0 5px; font-size: clamp(25px, 6vw, 34px); }
     .bio { margin: 0 auto; max-width: 600px; font-weight: 700; line-height: 1.5; }
-    .social { width: 150px; height: 42px; display: inline-flex; align-items: center; justify-content: center; margin: 22px 0 26px; text-decoration: none; }
+    .social { width: min(360px, 82vw); height: 52px; display: inline-flex; align-items: center; justify-content: center; margin: 22px 0 26px; text-decoration: none; }
     .social img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; background: #111827; }
     .links { display: grid; gap: 16px; }
     .link-card { min-height: 72px; display: grid; grid-template-columns: 54px 1fr 30px; align-items: center; gap: 14px; padding: 9px; border: 1px solid rgba(255, 255, 255, .82); color: white; text-decoration: none; background: rgba(54, 43, 78, .20); backdrop-filter: blur(8px); transition: transform .2s, background .2s; }
@@ -116,7 +119,7 @@ function renderLanding(error = '', showLogin = false) {
       <h1>restareaserver</h1>
       <p class="bio">Thanks for your support.</p>
       <a class="social" href="https://www.tiktok.com/@${encodeURIComponent(tiktokUsername)}" target="_blank" rel="noopener" aria-label="TikTok">
-        <img src="${profileImage}" alt="TikTok REST AREA">
+        <img src="${bannerImage}" alt="TikTok REST AREA">
       </a>
     </section>
 
@@ -380,6 +383,23 @@ function startHealthServer(client) {
         if (error) {
           res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
           res.end('Logo tidak ditemukan');
+          return;
+        }
+
+        res.writeHead(200, {
+          'Content-Type': 'image/gif',
+          'Cache-Control': 'public, max-age=31536000, immutable'
+        });
+        res.end(file);
+      });
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === REST_AREA_BANNER_URL) {
+      fs.readFile(REST_AREA_BANNER_PATH, (error, file) => {
+        if (error) {
+          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('Banner tidak ditemukan');
           return;
         }
 
