@@ -49,7 +49,7 @@ function isAuthorized(req) {
 
 function renderLanding(error = '', showLogin = false) {
   const tiktokUsername = process.env.TIKTOK_USERNAME || 'restareaserver';
-  const profileImage = 'https://cdn.discordapp.com/attachments/1514363278615380281/1514696314208653544/standard_7.gif?ex=6a30eb9f&is=6a2f9a1f&hm=97461db3c5a9cf597b04a16be49997c641cf9a7d34d5600ec6a74ede637138d2&';
+  const profileImage = 'https://cdn.discordapp.com/attachments/1514363278615380281/1516071949464506389/standard_8.gif?ex=6a314f88&is=6a2ffe08&hm=b41abe3bc03608fda8acf74fcddc9e17410954ecfc7bc57da237a43f041fd196&';
 
   return `<!doctype html>
 <html lang="id">
@@ -70,7 +70,8 @@ function renderLanding(error = '', showLogin = false) {
     .avatar { width: 104px; height: 104px; object-fit: cover; border-radius: 50%; border: 4px solid rgba(9, 13, 23, .78); background: #111827; }
     h1 { margin: 16px 0 5px; font-size: clamp(25px, 6vw, 34px); }
     .bio { margin: 0 auto; max-width: 600px; font-weight: 700; line-height: 1.5; }
-    .social { display: inline-block; margin: 22px 0 26px; color: white; font-size: 34px; font-weight: 900; text-decoration: none; }
+    .social { width: 150px; height: 42px; display: inline-flex; align-items: center; justify-content: center; margin: 22px 0 26px; text-decoration: none; }
+    .social img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; background: #111827; }
     .links { display: grid; gap: 16px; }
     .link-card { min-height: 72px; display: grid; grid-template-columns: 54px 1fr 30px; align-items: center; gap: 14px; padding: 9px; border: 1px solid rgba(255, 255, 255, .82); color: white; text-decoration: none; background: rgba(54, 43, 78, .20); backdrop-filter: blur(8px); transition: transform .2s, background .2s; }
     .link-card:hover { transform: translateY(-2px); background: rgba(255, 255, 255, .12); }
@@ -107,7 +108,9 @@ function renderLanding(error = '', showLogin = false) {
       <img class="avatar" src="${profileImage}" alt="REST AREA">
       <h1>restareaserver</h1>
       <p class="bio">Thanks for your support.</p>
-      <a class="social" href="https://www.tiktok.com/@${encodeURIComponent(tiktokUsername)}" target="_blank" rel="noopener" aria-label="TikTok">♪</a>
+      <a class="social" href="https://www.tiktok.com/@${encodeURIComponent(tiktokUsername)}" target="_blank" rel="noopener" aria-label="TikTok">
+        <img src="${profileImage}" alt="TikTok REST AREA">
+      </a>
     </section>
 
     <section class="links">
