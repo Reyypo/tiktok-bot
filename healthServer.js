@@ -106,7 +106,7 @@ function renderLanding(error = '', showLogin = false) {
     <section class="profile">
       <img class="avatar" src="${profileImage}" alt="REST AREA">
       <h1>restareaserver</h1>
-      <p class="bio">Terimakasih sudah support guys. Thanks for your support, guys.</p>
+      <p class="bio">Thanks for your support.</p>
       <a class="social" href="https://www.tiktok.com/@${encodeURIComponent(tiktokUsername)}" target="_blank" rel="noopener" aria-label="TikTok">♪</a>
     </section>
 
