@@ -126,11 +126,6 @@ function renderLanding(error = '', showLogin = false) {
         <span class="link-copy">REST AREA<small>Discord Server - Free to join</small></span>
         <span class="dots">&#8942;</span>
       </a>
-      <a class="link-card" href="https://rest-area-turnamen.onrender.com" target="_blank" rel="noopener">
-        <img src="${profileImage}" alt="Turnamen REST AREA">
-        <span class="link-copy">Bracket Turnamen</span>
-        <span class="dots">&#8942;</span>
-      </a>
       <a class="link-card" href="https://www.tiktok.com/@${encodeURIComponent(tiktokUsername)}" target="_blank" rel="noopener">
         <img src="${profileImage}" alt="TikTok REST AREA">
         <span class="link-copy">TikTok @${escapeHtml(tiktokUsername)}<small>Follow dan tonton live terbaru</small></span>
@@ -139,6 +134,11 @@ function renderLanding(error = '', showLogin = false) {
       <a class="link-card" href="https://sociabuzz.com/restareaserver/donate" target="_blank" rel="noopener">
         <img src="${profileImage}" alt="Sociabuzz REST AREA">
         <span class="link-copy">Sociabuzz REST AREA<small>Support dan kirim donasi</small></span>
+        <span class="dots">&#8942;</span>
+      </a>
+      <a class="link-card" href="https://rest-area-turnamen.onrender.com" target="_blank" rel="noopener">
+        <img src="${profileImage}" alt="Turnamen REST AREA">
+        <span class="link-copy">Bracket Turnamen</span>
         <span class="dots">&#8942;</span>
       </a>
     </section>
