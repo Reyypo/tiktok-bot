@@ -129,6 +129,11 @@ function renderLanding(error = '', showLogin = false) {
         <span class="link-copy">REST AREA<small>Discord Server - Free to join</small></span>
         <span class="dots">&#8942;</span>
       </a>
+      <a class="link-card" href="https://rest-area-turnamen.onrender.com" target="_blank" rel="noopener">
+        <img src="${profileImage}" alt="Turnamen REST AREA">
+        <span class="link-copy">REST AREA Turnamen<small>Daftar dan cek info turnamen</small></span>
+        <span class="dots">&#8942;</span>
+      </a>
       <a class="link-card" href="https://www.tiktok.com/@${encodeURIComponent(tiktokUsername)}" target="_blank" rel="noopener">
         <img src="${profileImage}" alt="TikTok REST AREA">
         <span class="link-copy">TikTok @${escapeHtml(tiktokUsername)}<small>Follow dan tonton live terbaru</small></span>
