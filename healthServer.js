@@ -58,7 +58,6 @@ function isAuthorized(req) {
 function renderLanding(error = '', showLogin = false) {
   const tiktokUsername = process.env.TIKTOK_USERNAME || 'restareaserver';
   const profileImage = REST_AREA_GIF_URL;
-  const logoImage = REST_AREA_LOGO_URL;
   const bannerImage = REST_AREA_BANNER_URL;
 
   return `<!doctype html>
@@ -77,8 +76,7 @@ function renderLanding(error = '', showLogin = false) {
     .admin-button { left: 28px; }
     .share-button { right: 28px; }
     .profile { padding-top: 76px; }
-    .avatar { width: min(340px, 74vw); aspect-ratio: 16 / 9; height: auto; object-fit: contain; border-radius: 8px; background: transparent; }
-    h1 { margin: 16px 0 5px; font-size: clamp(25px, 6vw, 34px); }
+    h1 { margin: 0 0 5px; font-size: clamp(25px, 6vw, 34px); }
     .bio { margin: 0 auto; max-width: 600px; font-weight: 700; line-height: 1.5; }
     .social { width: min(360px, 82vw); height: 52px; display: inline-flex; align-items: center; justify-content: center; margin: 22px 0 26px; text-decoration: none; }
     .social img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; background: #111827; }
@@ -115,8 +113,7 @@ function renderLanding(error = '', showLogin = false) {
     <button class="icon-button share-button" id="shareButton" type="button" aria-label="Bagikan halaman" title="Bagikan">&#8593;</button>
 
     <section class="profile">
-      <img class="avatar" src="${logoImage}" alt="REST AREA">
-      <h1>restareaserver</h1>
+      <h1>RESTAREASERVER</h1>
       <p class="bio">Thanks for your support.</p>
       <a class="social" href="https://www.tiktok.com/@${encodeURIComponent(tiktokUsername)}" target="_blank" rel="noopener" aria-label="TikTok">
         <img src="${bannerImage}" alt="TikTok REST AREA">
@@ -131,7 +128,7 @@ function renderLanding(error = '', showLogin = false) {
       </a>
       <a class="link-card" href="https://rest-area-turnamen.onrender.com" target="_blank" rel="noopener">
         <img src="${profileImage}" alt="Turnamen REST AREA">
-        <span class="link-copy">REST AREA Turnamen<small>Daftar dan cek info turnamen</small></span>
+        <span class="link-copy">Bracket Turnamen</span>
         <span class="dots">&#8942;</span>
       </a>
       <a class="link-card" href="https://www.tiktok.com/@${encodeURIComponent(tiktokUsername)}" target="_blank" rel="noopener">
