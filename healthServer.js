@@ -2,9 +2,11 @@ const crypto = require('crypto');
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
-const { EmbedBuilder } = require('discord.js');
+const { AttachmentBuilder, EmbedBuilder } = require('discord.js');
 
-const MAX_BODY_SIZE = 10_000;
+const MAX_TEXT_BODY_SIZE = 10_000;
+const MAX_UPLOAD_BODY_SIZE = 8_500_000;
+const MAX_PHOTO_SIZE = 8_000_000;
 const REST_AREA_GIF_URL = '/assets/rest-area.gif';
 const REST_AREA_GIF_PATH = path.join(__dirname, 'assets', 'rest-area.gif');
 const REST_AREA_LOGO_URL = '/assets/rest-area-logo.gif';
@@ -221,6 +223,20 @@ function parseColor(value) {
     : null;
 }
 
+function sanitizeFilename(filename) {
+  const parsed = path.parse(filename || 'foto.jpg');
+  const name = parsed.name.replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '') || 'foto';
+  const ext = parsed.ext.replace(/[^a-z0-9.]+/gi, '').toLowerCase() || '.jpg';
+
+  return `${name.slice(0, 48)}${ext.slice(0, 10)}`;
+}
+
+function isValidPhoto(file) {
+  return Boolean(file?.buffer?.length)
+    && file.buffer.length <= MAX_PHOTO_SIZE
+    && file.contentType.startsWith('image/');
+}
+
 function renderDashboard(channels, notice = '') {
   const options = channels.map(channel => (
     `<option value="${channel.id}">${escapeHtml(channel.guild.name)} / #${escapeHtml(channel.name)}</option>`
@@ -264,7 +280,7 @@ function renderDashboard(channels, notice = '') {
     <p class="subtitle">Pilih channel yang dapat diakses bot, tulis pesan, lalu kirim langsung dari dashboard.</p>
     ${notice ? `<div class="notice">${escapeHtml(notice)}</div>` : ''}
     ${channels.length ? `
-    <form method="post" action="/dashboard/send">
+    <form method="post" action="/dashboard/send" enctype="multipart/form-data">
       <label for="channelId">Channel tujuan</label>
       <select id="channelId" name="channelId" required>
         <option value="" selected disabled>Pilih channel tujuan...</option>
@@ -280,6 +296,8 @@ function renderDashboard(channels, notice = '') {
       <div id="plainFields">
         <label for="message">Pesan</label>
         <textarea id="message" name="message" maxlength="2000" required placeholder="Tulis pesan yang akan dikirim..."></textarea>
+        <label for="photo">Upload foto (opsional)</label>
+        <input id="photo" name="photo" type="file" accept="image/*">
         <div class="row"><span>Mention otomatis dinonaktifkan</span><span>Maksimal 2.000 karakter</span></div>
       </div>
 
@@ -300,6 +318,9 @@ function renderDashboard(channels, notice = '') {
 
         <label for="embedImage">URL gambar utama (opsional)</label>
         <input id="embedImage" name="embedImage" type="url" placeholder="https://...">
+
+        <label for="embedPhoto">Upload gambar utama (opsional)</label>
+        <input id="embedPhoto" name="embedPhoto" type="file" accept="image/*">
 
         <label for="embedThumbnail">URL thumbnail kanan atas (opsional)</label>
         <input id="embedThumbnail" name="embedThumbnail" type="url" placeholder="https://...">
@@ -331,16 +352,100 @@ function renderDashboard(channels, notice = '') {
 </html>`;
 }
 
-function readBody(req) {
+function readBody(req, maxSize = MAX_TEXT_BODY_SIZE) {
   return new Promise((resolve, reject) => {
     let body = '';
 
     req.on('data', chunk => {
       body += chunk;
-      if (body.length > MAX_BODY_SIZE) reject(new Error('Request terlalu besar'));
+      if (body.length > maxSize) reject(new Error('Request terlalu besar'));
     });
     req.on('end', () => resolve(body));
     req.on('error', reject);
+  });
+}
+
+function readBodyBuffer(req, maxSize = MAX_UPLOAD_BODY_SIZE) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+
+    req.on('data', chunk => {
+      size += chunk.length;
+      if (size > maxSize) {
+        reject(new Error('Request terlalu besar'));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
+function parseContentDisposition(value) {
+  return Object.fromEntries(
+    value.split(';')
+      .map(part => part.trim())
+      .filter(part => part.includes('='))
+      .map(part => {
+        const [key, ...rawValue] = part.split('=');
+        return [key.toLowerCase(), rawValue.join('=').replace(/^"|"$/g, '')];
+      })
+  );
+}
+
+function parseMultipartForm(req) {
+  const contentType = req.headers['content-type'] || '';
+  const boundary = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i)?.[1]
+    || contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i)?.[2];
+
+  if (!boundary) throw new Error('Boundary upload tidak valid');
+
+  return readBodyBuffer(req).then(buffer => {
+    const body = buffer.toString('latin1');
+    const fields = new Map();
+    const files = new Map();
+
+    for (const part of body.split(`--${boundary}`)) {
+      if (!part || part === '--\r\n' || part === '--') continue;
+
+      const normalizedPart = part.startsWith('\r\n') ? part.slice(2) : part;
+      const headerEnd = normalizedPart.indexOf('\r\n\r\n');
+      if (headerEnd === -1) continue;
+
+      const rawHeaders = normalizedPart.slice(0, headerEnd);
+      let content = normalizedPart.slice(headerEnd + 4);
+      if (content.endsWith('\r\n')) content = content.slice(0, -2);
+      if (content.endsWith('--')) content = content.slice(0, -2);
+
+      const headers = Object.fromEntries(rawHeaders.split('\r\n').map(line => {
+        const separator = line.indexOf(':');
+        return separator === -1
+          ? ['', '']
+          : [line.slice(0, separator).toLowerCase(), line.slice(separator + 1).trim()];
+      }).filter(([key]) => key));
+      const disposition = parseContentDisposition(headers['content-disposition'] || '');
+      const name = disposition.name;
+
+      if (!name) continue;
+
+      if (disposition.filename) {
+        files.set(name, {
+          filename: sanitizeFilename(disposition.filename),
+          contentType: headers['content-type'] || 'application/octet-stream',
+          buffer: Buffer.from(content, 'latin1')
+        });
+      } else {
+        fields.set(name, content);
+      }
+    }
+
+    return {
+      get: name => fields.get(name) || '',
+      file: name => files.get(name) || null
+    };
   });
 }
 
@@ -505,7 +610,10 @@ function startHealthServer(client) {
         }
 
         try {
-          const body = new URLSearchParams(await readBody(req));
+          const isMultipart = (req.headers['content-type'] || '').startsWith('multipart/form-data');
+          const body = isMultipart
+            ? await parseMultipartForm(req)
+            : new URLSearchParams(await readBody(req));
           const channelId = body.get('channelId') || '';
           const messageType = body.get('messageType') === 'embed' ? 'embed' : 'plain';
           const message = (body.get('message') || '').trim();
@@ -517,12 +625,23 @@ function startHealthServer(client) {
           }
 
           if (messageType === 'plain') {
-            if (!message || message.length > 2000) {
-              sendHtml(res, 400, renderDashboard(getSendableChannels(client), 'Pesan biasa harus berisi 1-2.000 karakter.'));
+            const photo = body.file?.('photo');
+
+            if (photo && !isValidPhoto(photo)) {
+              sendHtml(res, 400, renderDashboard(getSendableChannels(client), 'Foto harus berupa gambar dan maksimal 8 MB.'));
               return;
             }
 
-            await channel.send({ content: message, allowedMentions: { parse: [] } });
+            if ((!message && !photo) || message.length > 2000) {
+              sendHtml(res, 400, renderDashboard(getSendableChannels(client), 'Pesan biasa harus berisi teks, foto, atau keduanya.'));
+              return;
+            }
+
+            await channel.send({
+              ...(message && { content: message }),
+              ...(photo && { files: [new AttachmentBuilder(photo.buffer, { name: photo.filename })] }),
+              allowedMentions: { parse: [] }
+            });
           } else {
             const content = (body.get('embedContent') || '').trim();
             const title = (body.get('embedTitle') || '').trim();
@@ -532,15 +651,17 @@ function startHealthServer(client) {
             const bannerUrl = (body.get('embedBanner') || '').trim();
             const footer = (body.get('embedFooter') || '').trim();
             const color = parseColor(body.get('embedColor') || '#fe2c55');
+            const embedPhoto = body.file?.('embedPhoto');
 
-            const hasEmbedContent = title || description || imageUrl || thumbnailUrl || bannerUrl;
+            const hasEmbedContent = title || description || imageUrl || embedPhoto || thumbnailUrl || bannerUrl;
 
             if (!hasEmbedContent || content.length > 2000 || title.length > 256
               || description.length > 4096
               || footer.length > 2048
               || color === null || !isHttpUrl(imageUrl)
-              || !isHttpUrl(thumbnailUrl) || !isHttpUrl(bannerUrl)) {
-              sendHtml(res, 400, renderDashboard(getSendableChannels(client), 'Data embed tidak valid. Periksa warna dan semua URL gambar.'));
+              || !isHttpUrl(thumbnailUrl) || !isHttpUrl(bannerUrl)
+              || (embedPhoto && !isValidPhoto(embedPhoto))) {
+              sendHtml(res, 400, renderDashboard(getSendableChannels(client), 'Data embed tidak valid. Periksa warna, URL gambar, dan ukuran foto maksimal 8 MB.'));
               return;
             }
 
@@ -550,7 +671,8 @@ function startHealthServer(client) {
 
             if (title) embed.setTitle(title);
             if (description) embed.setDescription(description);
-            if (imageUrl) embed.setImage(imageUrl);
+            if (embedPhoto) embed.setImage(`attachment://${embedPhoto.filename}`);
+            else if (imageUrl) embed.setImage(imageUrl);
             if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
             if (footer) embed.setFooter({ text: footer });
 
@@ -563,6 +685,7 @@ function startHealthServer(client) {
             await channel.send({
               ...(content && { content }),
               embeds,
+              ...(embedPhoto && { files: [new AttachmentBuilder(embedPhoto.buffer, { name: embedPhoto.filename })] }),
               allowedMentions: { parse: [] }
             });
           }

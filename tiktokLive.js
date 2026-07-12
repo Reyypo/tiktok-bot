@@ -29,6 +29,18 @@ function getLiveDetails(roomInfo, username) {
   };
 }
 
+function getLiveSessionKey(connectState, connection, roomInfo) {
+  const room = roomInfo?.data || roomInfo || {};
+
+  return connectState?.roomId
+    || connection.roomId
+    || room.room_id
+    || room.id_str
+    || room.id
+    || room.create_time
+    || null;
+}
+
 function buildLiveMessage(username, roomInfo) {
   const liveUrl = `https://www.tiktok.com/@${username}/live`;
   const profileUrl = `https://www.tiktok.com/@${username}`;
@@ -79,7 +91,7 @@ function startTikTokLiveChecker(client) {
   const username = process.env.TIKTOK_USERNAME;
   const channelId = process.env.CHANNEL_ID;
   let activeConnection = null;
-  let notificationSent = false;
+  let lastNotifiedSessionKey = null;
   let isChecking = false;
 
   async function checkLive() {
@@ -89,32 +101,34 @@ function startTikTokLiveChecker(client) {
     const connection = new WebcastPushConnection(username);
 
     try {
-      await connection.connect();
+      const connectState = await connection.connect();
       activeConnection = connection;
+      const roomInfo = connectState.roomInfo || connection.roomInfo;
+      let liveSessionKey = getLiveSessionKey(connectState, connection, roomInfo);
 
       connection.once('streamEnd', () => {
         console.log(`${username} sudah selesai LIVE`);
         activeConnection = null;
-        notificationSent = false;
       });
 
       connection.once('disconnected', () => {
         activeConnection = null;
       });
 
-      if (!notificationSent) {
-        const roomInfo = await connection.fetchRoomInfo().catch(() => null);
+      if (!liveSessionKey || liveSessionKey !== lastNotifiedSessionKey) {
+        const resolvedRoomInfo = roomInfo || await connection.fetchRoomInfo().catch(() => null);
         const channel = await client.channels.fetch(channelId);
+        const details = getLiveDetails(resolvedRoomInfo, username);
+        liveSessionKey = liveSessionKey || getLiveSessionKey(connectState, connection, resolvedRoomInfo);
 
-        await channel.send(buildLiveMessage(username, roomInfo));
-        notificationSent = true;
+        await channel.send(buildLiveMessage(username, resolvedRoomInfo));
+        lastNotifiedSessionKey = liveSessionKey;
 
-        console.log(`${username} sedang LIVE, notifikasi terkirim`);
+        console.log(`${username} sedang LIVE, notifikasi terkirim: ${details.title}`);
       }
     } catch (error) {
       console.log('Belum live:', error.message);
       activeConnection = null;
-      notificationSent = false;
       await connection.disconnect().catch(() => {});
     } finally {
       isChecking = false;
