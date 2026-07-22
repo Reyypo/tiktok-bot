@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "worker:dev": "wrangler dev",
+    "worker:deploy": "wrangler deploy",
     "check": "node --check index.js && node --check healthServer.js && node --check rolePanel.js && node --check tiktokLive.js"
   },
   "keywords": [],
